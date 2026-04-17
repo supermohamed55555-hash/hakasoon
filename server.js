@@ -8,6 +8,7 @@ const port = 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public')); // ADDED: Serve frontend files
 
 // Connect to SQLite DB
 const dbPath = path.resolve(__dirname, 'database.db');
