@@ -3,68 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Dashboard - AASTMT</title>
+    <title>Employee Dashboard | AASTMT</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="background-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2" style="background: #e056fd;"></div>
-    </div>
-    
-    <div class="dashboard-container" style="position: relative; z-index: 2;">
-        <h1 style="margin-bottom: 30px;">Welcome, <span id="user-name">User</span> <a href="#" id="logout-btn" class="logout" style="float: right; color: #ff3366; text-decoration: none; font-size: 14px;">Logout</a></h1>
-        
-        <div class="card">
-            <h2>Book a Room (Blind Request)</h2>
-            <form id="booking-form">
-                <label>SELECT ROOM</label>
-                <select id="room-select" required></select>
+    <div class="background-blobs"></div>
 
-                <label>DATE (> 24/48 HOURS CONSTRAINT)</label>
-                <input type="date" id="booking-date" required>
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="https://www.aast.edu/en/img/aast-logo.png" alt="AAST Logo" class="logo-img">
+            <div>
+                <div style="font-weight: 700; color: #004a99; font-size: 1.1rem; letter-spacing: 1px;">AASTMT</div>
+                <div style="font-size: 0.7rem; color: #5e728d; text-transform: uppercase;">Employee Self-Service Portal</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <span id="user-name" style="font-weight: 600; color: #004a99;">User Panel</span>
+            <button id="logout-btn" class="glow-button" style="padding: 10px 20px; font-size: 0.8rem; width: auto; background: #ff3366;">Logout</button>
+        </div>
+    </nav>
 
-                <label>TIME SLOT</label>
-                <select id="time-slot" required>
-                    <option value="08:00 - 10:00">08:00 - 10:00</option>
-                    <option value="10:00 - 12:00">10:00 - 12:00</option>
-                    <option value="12:00 - 14:00">12:00 - 14:00</option>
-                    <option value="14:00 - 16:00">14:00 - 16:00</option>
-                </select>
+    <div class="dashboard-wrap" style="grid-template-columns: 1fr 2fr;">
+        <div class="sidebar">
+            <div class="card">
+                <h2>🖋️ New Room Request</h2>
+                <form id="booking-form">
+                    <div class="input-group">
+                        <label>Select Facility</label>
+                        <select id="room-select" required></select>
+                    </div>
 
-                <label>PURPOSE OF BOOKING</label>
-                <input type="text" id="purpose" placeholder="Brief Purpose (e.g. Workshop)" required>
-                
-                <!-- Extra Fields for Multi-Purpose Rooms (E-Form Requirements) -->
-                <div id="multi-purpose-fields" style="display: none; border-top: 1px solid var(--glass-border); padding-top: 15px; margin-top: 15px;">
-                    <p style="color: var(--primary-glow); font-size: 14px; margin-bottom: 10px; font-weight: bold;">🏢 Event Manager Details</p>
-                    <input type="text" id="em-name" placeholder="Full Name">
-                    <input type="text" id="em-title" placeholder="Job Title">
-                    <p style="color: var(--primary-glow); font-size: 14px; margin-bottom: 10px; margin-top:10px; font-weight: bold;">🛠️ Technical Requirements</p>
-                    <textarea id="tech-req" placeholder="Specify: Microphones count, Laptop needed, Projector, Video Conference setup, etc." style="height: 80px;"></textarea>
-                </div>
+                    <div class="input-group">
+                        <label>Reservation Date</label>
+                        <input type="date" id="booking-date" required>
+                    </div>
 
-                <button type="submit" class="glow-button" id="submit-btn" style="margin-top: 20px;">Submit Request</button>
-            </form>
+                    <div class="input-group">
+                        <label>Preferred Time Slot</label>
+                        <select id="time-slot" required>
+                            <option value="08:00 - 10:00">08:00 - 10:00</option>
+                            <option value="10:00 - 12:00">10:00 - 12:00</option>
+                            <option value="12:00 - 14:00">12:00 - 14:00</option>
+                            <option value="14:00 - 16:00">14:00 - 16:00</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Purpose of Use</label>
+                        <input type="text" id="purpose" placeholder="e.g. Research Seminar" required>
+                    </div>
+                    
+                    <div id="multi-purpose-fields" style="display: none; background: #f8fafd; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px dashed var(--primary-blue);">
+                        <h4 style="color: var(--primary-blue); margin-bottom: 15px; font-size: 0.9rem;">📋 E-Form Requirements</h4>
+                        <div class="input-group">
+                            <label>Event Manager Name</label>
+                            <input type="text" id="em-name" placeholder="Full Name">
+                        </div>
+                        <div class="input-group">
+                            <label>Designation / Title</label>
+                            <input type="text" id="em-title" placeholder="Job Title">
+                        </div>
+                        <div class="input-group">
+                            <label>Technical Details</label>
+                            <textarea id="tech-req" placeholder="Microphones, Video Conference, etc." style="height: 100px;"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="glow-button" id="submit-btn">Submit Official Request</button>
+                </form>
+            </div>
         </div>
 
-        <div class="card">
-            <h2>My Booking Requests</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Room</th>
-                        <th>Status</th>
-                        <th>Admin Feedback</th>
-                    </tr>
-                </thead>
-                <tbody id="requests-list">
-                    <tr><td colspan="5">No requests found.</td></tr>
-                </tbody>
-            </table>
+        <div class="main-content">
+            <div class="card">
+                <h2>📑 My Reservation History</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Facility</th>
+                            <th>Status</th>
+                            <th>Admin Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requests-list">
+                        <tr><td colspan="5" style="text-align: center;">Retrieving records...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

@@ -3,69 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Branch Manager Dashboard - AASTMT</title>
+    <title>Management Portal | AASTMT</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        .dashboard-container { max-width: 1000px; margin: 40px auto; color: white; }
-        .card { background: var(--glass-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--glass-border); margin-bottom: 30px; backdrop-filter: blur(10px); }
-        h2 { margin-bottom: 20px; color: var(--primary-glow); }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--glass-border); }
-        .status-PENDING_ADMIN { color: #f39c12; font-weight: bold; }
-        .status-PENDING_MANAGER { color: #e056fd; font-weight: bold; }
-        .status-APPROVED { color: #00e5ff; font-weight: bold;}
-        .status-REJECTED { color: #ff3366; font-weight: bold;}
-        .logout { float: right; color: #ff3366; text-decoration: none; font-size: 14px; cursor: pointer; transition: 0.3s; }
-        
-        .action-btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: var(--font-main); transition: 0.2s;}
-        .approve-btn { background: #00e5ff; color: black; margin-right: 5px;}
-        .reject-btn { background: #ff3366; color: white; }
-        
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 100; align-items:center; justify-content:center; backdrop-filter: blur(5px);}
-        .modal-content { background: #050510; padding: 30px; border-radius: 12px; border: 1px solid #ff3366; width: 450px;}
-        .close-btn { float: right; cursor: pointer; color: white; font-size: 20px;}
-        .modal textarea { width: 100%; height: 120px; background: rgba(0,0,0,0.5); color: white; padding: 15px; border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 15px; outline:none; font-family:var(--font-main); resize: none;}
-    </style>
 </head>
 <body>
-    <div class="background-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2" style="background: #e056fd;"></div>
-    </div>
-    
-    <div class="dashboard-container" style="position: relative; z-index: 2;">
-        <h1>Manager Control Panel <a href="#" id="logout-btn" class="logout">Logout</a></h1>
-        <p style="color: var(--text-muted); margin-bottom: 20px;">Welcome, <span id="user-name">Manager</span>. Final approval authority.</p>
-        
-        <div class="card">
-            <h2>Requests Pending Final Approval</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Room</th>
-                        <th>Employee</th>
-                        <th>Purpose</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="bookings-list">
-                    <tr><td colspan="7">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <div class="background-blobs"></div>
 
-    <!-- Reject Modal -->
-    <div id="rejectModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="document.getElementById('rejectModal').style.display='none'">&times;</span>
-            <h3 style="color: #ff3366;">Manager Rejection</h3>
-            <textarea id="reject-reason" placeholder="Final reason for rejection..."></textarea>
-            <button id="confirm-reject" class="glow-button" style="background: linear-gradient(45deg, #ff3366 0%, #cc0044 100%);">Final Reject</button>
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="https://www.aast.edu/en/img/aast-logo.png" alt="AAST Logo" class="logo-img">
+            <div>
+                <div style="font-weight: 700; color: #004a99; font-size: 1.1rem; letter-spacing: 1px;">AASTMT</div>
+                <div style="font-size: 0.7rem; color: #5e728d; text-transform: uppercase;">Branch Managerial Portal</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <span id="mgmt-name" style="font-weight: 600; color: #004a99;">Management Office</span>
+            <button id="logout-btn" class="glow-button" style="padding: 10px 20px; font-size: 0.8rem; width: auto; background: #ff3366;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrap" style="grid-template-columns: 1fr;">
+        <div class="main-content">
+            <div class="card">
+                <h2>🖋️ Final Approval Queue</h2>
+                <p style="margin-bottom: 20px; color: var(--text-muted);">The following requests require your final authorization before room confirmation.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Originator</th>
+                            <th>Target Facility</th>
+                            <th>Date</th>
+                            <th>Time Slot</th>
+                            <th>Purpose</th>
+                            <th>Final Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manager-requests-list">
+                        <tr><td colspan="6" style="text-align: center;">Scanning for pending authorization...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
