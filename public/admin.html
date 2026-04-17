@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AASTMT</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-container { max-width: 1000px; margin: 40px auto; color: white; }
+        .card { background: var(--glass-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--glass-border); margin-bottom: 30px; backdrop-filter: blur(10px); }
+        h2 { margin-bottom: 20px; color: var(--primary-glow); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--glass-border); }
+        .status-PENDING { color: #f39c12; font-weight: bold; }
+        .status-APPROVED { color: #00e5ff; font-weight: bold;}
+        .status-REJECTED { color: #ff3366; font-weight: bold;}
+        .logout { float: right; color: #ff3366; text-decoration: none; font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .logout:hover { text-shadow: 0 0 10px #ff3366; }
+        
+        .action-btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: var(--font-main); transition: 0.2s;}
+        .approve-btn { background: #00e5ff; color: black; margin-right: 5px;}
+        .reject-btn { background: #ff3366; color: white; }
+        .approve-btn:hover { background: #00b8cc; box-shadow: 0 0 10px #00e5ff;}
+        .reject-btn:hover { background: #cc0044; box-shadow: 0 0 10px #ff3366;}
+        
+        /* Modal for Rejection Note */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 100; align-items:center; justify-content:center; backdrop-filter: blur(5px);}
+        .modal-content { background: #050510; padding: 30px; border-radius: 12px; border: 1px solid #ff3366; width: 450px;}
+        .modal-content h3 { margin-bottom: 15px; color: #ff3366;}
+        .modal textarea { width: 100%; height: 120px; background: rgba(0,0,0,0.5); color: white; padding: 15px; border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 15px; outline:none; font-family:var(--font-main); resize: none;}
+        .modal textarea:focus { border-color: #ff3366; }
+        .close-btn { float: right; cursor: pointer; color: white; font-size: 20px;}
+    </style>
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2" style="background: #00e5ff;"></div>
+    </div>
+    
+    <div class="dashboard-container" style="position: relative; z-index: 2;">
+        <h1 style="margin-bottom: 30px;">Welcome, <span id="user-name">Admin</span> (System Manager) <a href="#" id="logout-btn" class="logout">Logout</a></h1>
+        
+        <div class="card">
+            <h2>All Bookings & Schedule Engine</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Room</th>
+                        <th>Employee</th>
+                        <th>Purpose</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bookings-list">
+                    <tr><td colspan="7">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('rejectModal').style.display='none'">&times;</span>
+            <h3>Reject Booking</h3>
+            <p style="margin-bottom: 15px; font-size: 14px; color: #8a96b3;">Please provide a reason and an alternative suggestion for the user.</p>
+            <textarea id="reject-reason" placeholder="e.g. Conflict with fixed schedule. Try Room C at 2PM."></textarea>
+            <button id="confirm-reject" class="glow-button" style="padding: 12px; background: linear-gradient(45deg, #ff3366 0%, #cc0044 100%);">Confirm Rejection</button>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
