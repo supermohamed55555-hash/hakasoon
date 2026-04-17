@@ -10,6 +10,100 @@ document.addEventListener('DOMContentLoaded', async () => {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('report-date-picker').value = today;
 
+    // 1. Morning Report: Daily Schedule
+    window.loadDailySchedule = async () => {
+        try {
+            const date = document.getElementById('report-date-picker').value;
+            const res = await fetch(`/api/bookings?date=${date}`);
+            const bookings = await res.json();
+            const list = document.getElementById('daily-schedule-list');
+            list.innerHTML = '';
+
+            const approvedOnes = (bookings || []).filter(b => b.status === 'APPROVED');
+            if(approvedOnes.length === 0) {
+                list.innerHTML = '<tr><td colspan="5" style="text-align:center;">No confirmed bookings for this day.</td></tr>';
+            } else {
+                approvedOnes.forEach(b => {
+                    list.innerHTML += `
+                        <tr>
+                            <td>${b.time_slot}</td>
+                            <td>${b.room_name}</td>
+                            <td>${b.purpose}</td>
+                            <td>${b.user_name}</td>
+                            <td>${b.building_name}</td>
+                        </tr>
+                    `;
+                });
+            }
+        } catch(e) { console.error("Schedule error:", e); }
+    };
+
+    // 2. Pending Approvals
+    window.loadPendingRequests = async () => {
+        try {
+            const res = await fetch('/api/bookings');
+            const data = await res.json();
+            const list = document.getElementById('pending-requests-list');
+            list.innerHTML = '';
+            
+            const pending = (data || []).filter(b => b.status === 'PENDING_ADMIN');
+            if(pending.length === 0) {
+                list.innerHTML = '<tr><td colspan="6" style="text-align:center;">No pending requests.</td></tr>';
+            } else {
+                pending.forEach(b => {
+                    list.innerHTML += `
+                        <tr>
+                            <td>${b.user_name}</td>
+                            <td>${b.building_name}</td>
+                            <td>${b.room_name}</td>
+                            <td>${b.booking_date}</td>
+                            <td>${b.time_slot}</td>
+                            <td>
+                                <button class="action-btn approve-btn" onclick="handleApprove(${b.id})">Pass</button>
+                                <button class="action-btn reject-btn" onclick="openRejectModal(${b.id})">Reject</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        } catch(e) { console.error("Requests error:", e); }
+    };
+
+    // 3. VIP Notifications (Final Approvals)
+    window.loadNotifications = async () => {
+        try {
+            const res = await fetch('/api/notifications');
+            const data = await res.json();
+            const tray = document.getElementById('notifications-list');
+            tray.innerHTML = '';
+            if(!data || data.length === 0) {
+                tray.innerHTML = '<p style="font-size: 12px; text-align: center;">No approvals yet.</p>';
+            } else {
+                data.forEach(n => {
+                    tray.innerHTML += `
+                        <div class="notif-item">
+                            <b>FINALIZED:</b> ${n.room_number} for "${n.purpose}" on <b>${n.booking_date}</b> (${n.time_slot}) by ${n.full_name}
+                        </div>
+                    `;
+                });
+            }
+        } catch(e) { console.error("Notifications error:", e); }
+    };
+
+    // Stats
+    const loadStats = async () => {
+        try {
+            const bRes = await fetch('/api/buildings');
+            const rRes = await fetch('/api/rooms');
+            const bookRes = await fetch('/api/bookings');
+            const bookings = await bookRes.json();
+            
+            document.getElementById('stat-buildings').textContent = (await bRes.json()).length || 0;
+            document.getElementById('stat-rooms').textContent = (await rRes.json()).length || 0;
+            document.getElementById('stat-pending').textContent = (bookings || []).filter(b => b.status === 'PENDING_ADMIN').length;
+        } catch(e) { console.error("Stats error:", e); }
+    };
+
     const loadAllData = () => {
         loadDailySchedule();
         loadPendingRequests();
@@ -17,97 +111,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadStats();
     };
 
-    // 1. Morning Report: Daily Schedule
-    window.loadDailySchedule = async () => {
-        const date = document.getElementById('report-date-picker').value;
-        const res = await fetch(`/api/bookings?date=${date}`);
-        const bookings = await res.json();
-        const list = document.getElementById('daily-schedule-list');
-        list.innerHTML = '';
-
-        const approvedOnes = bookings.filter(b => b.status === 'APPROVED');
-        if(approvedOnes.length === 0) {
-            list.innerHTML = '<tr><td colspan="5" style="text-align:center;">No confirmed bookings for this day.</td></tr>';
-        } else {
-            approvedOnes.forEach(b => {
-                list.innerHTML += `
-                    <tr>
-                        <td>${b.time_slot}</td>
-                        <td>${b.room_name}</td>
-                        <td>${b.purpose}</td>
-                        <td>${b.user_name}</td>
-                        <td>${b.building_name}</td>
-                    </tr>
-                `;
-            });
-        }
-    };
-
-    // 2. Pending Approvals
-    window.loadPendingRequests = async () => {
-        const res = await fetch('/api/bookings');
-        const data = await res.json();
-        const list = document.getElementById('pending-requests-list');
-        list.innerHTML = '';
-        
-        const pending = data.filter(b => b.status === 'PENDING_ADMIN');
-        if(pending.length === 0) {
-            list.innerHTML = '<tr><td colspan="6" style="text-align:center;">No pending requests.</td></tr>';
-        } else {
-            pending.forEach(b => {
-                list.innerHTML += `
-                    <tr>
-                        <td>${b.user_name}</td>
-                        <td>${b.building_name}</td>
-                        <td>${b.room_name}</td>
-                        <td>${b.booking_date}</td>
-                        <td>${b.time_slot}</td>
-                        <td>
-                            <button class="action-btn approve-btn" onclick="handleApprove(${b.id})">Pass</button>
-                            <button class="action-btn reject-btn" onclick="openRejectModal(${b.id})">Reject</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-    };
-
-    // 3. VIP Notifications (Final Approvals)
-    window.loadNotifications = async () => {
-        const res = await fetch('/api/notifications');
-        const data = await res.json();
-        const tray = document.getElementById('notifications-list');
-        tray.innerHTML = '';
-        if(data.length === 0) {
-            tray.innerHTML = '<p style="font-size: 12px; text-align: center;">No approvals yet.</p>';
-        } else {
-            data.forEach(n => {
-                tray.innerHTML += `
-                    <div class="notif-item">
-                        <b>FINALIZED:</b> ${n.room_number} for "${n.purpose}" on <b>${n.booking_date}</b> (${n.time_slot}) by ${n.full_name}
-                    </div>
-                `;
-            });
-        }
-    };
-
-    // Stats
-    const loadStats = async () => {
-        const bRes = await fetch('/api/buildings');
-        const rRes = await fetch('/api/rooms');
-        const bookings = await (await fetch('/api/bookings')).json();
-        
-        document.getElementById('stat-buildings').textContent = (await bRes.json()).length;
-        document.getElementById('stat-rooms').textContent = (await rRes.json()).length;
-        document.getElementById('stat-pending').textContent = bookings.filter(b => b.status === 'PENDING_ADMIN').length;
-    };
-
     // Date Picker event
     document.getElementById('report-date-picker').addEventListener('change', loadDailySchedule);
 
     // Initial Load
     loadAllData();
-    setInterval(loadNotifications, 10000); // Polling for notifications
+    setInterval(loadNotifications, 10000); 
 
     // Facility Modal Logic
     document.getElementById('open-facility-modal').onclick = () => {
@@ -123,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         data.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name}</option>`);
     };
 
-    // Add Building Header
+    // Add Building
     document.getElementById('add-building-form').onsubmit = async (e) => {
         e.preventDefault();
         const res = await fetch('/api/buildings', {
@@ -138,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(res.ok) { alert("Building Registered!"); loadBuildingsSelect(); loadStats(); }
     };
 
-    // Add Room Header
+    // Add Room
     document.getElementById('add-room-form').onsubmit = async (e) => {
         e.preventDefault();
         const res = await fetch('/api/rooms', {
@@ -178,6 +187,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ status: 'REJECTED', admin_note: note, role: 'ADMIN' })
         });
-        if(res.ok) { document.getElementById('rejectModal').style.display = 'none'; loadAllData(); }
+        if(res.ok) { 
+            document.getElementById('rejectModal').style.display = 'none'; 
+            document.getElementById('reject-reason').value = '';
+            loadAllData(); 
+        }
     };
+
+    document.getElementById('logout-btn').onclick = () => { localStorage.removeItem('currentUser'); window.location.href='/'; };
 });
