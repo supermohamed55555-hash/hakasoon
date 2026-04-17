@@ -15,7 +15,7 @@
         .logout { float: right; color: #ff3366; text-decoration: none; font-size: 14px; cursor: pointer; }
         
         /* Floating Action Button */
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--primary-glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: black; cursor: pointer; box-shadow: 0 0 20px var(--primary-glow); z-index: 99; transition: 0.3s;}
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: var(--primary-glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: black; cursor: pointer; box-shadow: 0 0 20px var(--primary-glow); z-index: 9999; border: none; outline: none; transition: 0.3s;}
         .fab:hover { transform: scale(1.1) rotate(90deg); }
 
         /* Notification Tray */
@@ -25,8 +25,8 @@
         .approve-btn { background: #00e5ff; color: black; }
         .reject-btn { background: #ff3366; color: white; }
 
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 100; align-items:center; justify-content:center; backdrop-filter: blur(5px);}
-        .modal-content { background: #050510; padding: 30px; border-radius: 12px; border: 1px solid var(--glass-border); width: 500px;}
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 100000; align-items:center; justify-content:center; backdrop-filter: blur(10px);}
+        .modal-content { background: #050510; padding: 30px; border-radius: 12px; border: 1px solid var(--glass-border); width: 500px; position: relative;}
         
         input, select, textarea { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white; margin-bottom: 15px; outline: none;}
         .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
@@ -108,7 +108,7 @@
     </div>
 
     <!-- FAB for adding Facilities -->
-    <div class="fab" id="open-facility-modal" title="Add Building or Room">+</div>
+    <button class="fab" id="open-facility-modal" title="Add Building or Room" onclick="window.openFacilityModal()">+</button>
 
     <!-- Facility Management Modal -->
     <div id="facilityModal" class="modal">

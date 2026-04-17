@@ -119,17 +119,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     setInterval(loadNotifications, 10000); 
 
     // Facility Modal Logic
-    document.getElementById('open-facility-modal').onclick = () => {
-        document.getElementById('facilityModal').style.display = 'flex';
+    window.openFacilityModal = () => {
+        console.log("Opening Facility Modal...");
+        const modal = document.getElementById('facilityModal');
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
         loadBuildingsSelect();
     };
 
+    const fab = document.getElementById('open-facility-modal');
+    if (fab) {
+        fab.addEventListener('click', window.openFacilityModal);
+    } else {
+        console.error("FAB button not found in DOM");
+    }
+
     const loadBuildingsSelect = async () => {
-        const res = await fetch('/api/buildings');
-        const data = await res.json();
-        const select = document.getElementById('r-building');
-        select.innerHTML = '<option value="">Target Building</option>';
-        data.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name}</option>`);
+        try {
+            const res = await fetch('/api/buildings');
+            const data = await res.json();
+            const select = document.getElementById('r-building');
+            if (select) {
+                select.innerHTML = '<option value="">Target Building</option>';
+                data.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name}</option>`);
+            }
+        } catch(e) { console.error("Buildings select error:", e); }
     };
 
     // Add Building
