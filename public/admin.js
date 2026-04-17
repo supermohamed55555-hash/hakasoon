@@ -33,9 +33,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 list.innerHTML += `
                     <tr>
+                        <td>${b.building_name || '-'}</td>
+                        <td>${b.room_name}</td>
                         <td>${b.booking_date}</td>
                         <td>${b.time_slot}</td>
-                        <td>${b.room_name}</td>
                         <td>${b.user_name}</td>
                         <td>${b.purpose || '-'}</td>
                         <td class="status-${b.status}">${b.status.replace('_', ' ')}</td>
@@ -43,13 +44,65 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </tr>
                 `;
             });
-            if(bookings.length === 0) list.innerHTML = '<tr><td colspan="7" style="text-align:center;">No bookings found.</td></tr>';
+            if(bookings.length === 0) list.innerHTML = '<tr><td colspan="8" style="text-align:center;">No bookings found.</td></tr>';
         } catch (e) {
             console.error(e);
         }
     };
 
+    // Load Buildings for selection
+    const loadBuildings = async () => {
+        try {
+            const res = await fetch('/api/buildings');
+            const buildings = await res.json();
+            const select = document.getElementById('r-building');
+            select.innerHTML = '<option value="">Select Building</option>';
+            buildings.forEach(b => {
+                select.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+            });
+        } catch (e) { console.error(e); }
+    };
+
     loadAllBookings();
+    loadBuildings();
+
+    // Add Building
+    document.getElementById('add-building-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            name: document.getElementById('b-name').value,
+            total_rooms: document.getElementById('b-rooms').value,
+            creation_date: document.getElementById('b-date').value
+        };
+        const res = await fetch('/api/buildings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            alert("Building Added!");
+            loadBuildings();
+        }
+    });
+
+    // Add Room
+    document.getElementById('add-room-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            building_id: document.getElementById('r-building').value,
+            room_number: document.getElementById('r-number').value,
+            room_type: document.getElementById('r-type').value,
+            capacity: document.getElementById('r-capacity').value
+        };
+        const res = await fetch('/api/rooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            alert("Room Added!");
+        }
+    });
 
     // Logic for Approve
     window.handleApprove = async (id) => {

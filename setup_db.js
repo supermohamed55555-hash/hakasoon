@@ -16,6 +16,7 @@ function initializeDB() {
         // Drop existing tables for a fresh start during setup
         db.run('DROP TABLE IF EXISTS bookings');
         db.run('DROP TABLE IF EXISTS rooms');
+        db.run('DROP TABLE IF EXISTS buildings');
         db.run('DROP TABLE IF EXISTS users');
 
         // Create Users Table
@@ -27,12 +28,23 @@ function initializeDB() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => { if (err) console.error("Error creating users:", err.message); });
 
+        // Create Buildings Table
+        db.run(`CREATE TABLE buildings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            total_rooms INTEGER,
+            creation_date DATE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => { if (err) console.error("Error creating buildings:", err.message); });
+
         // Create Rooms Table
         db.run(`CREATE TABLE rooms (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            room_type TEXT NOT NULL CHECK (room_type IN ('LECTURE', 'MULTI_PURPOSE')),
-            capacity INTEGER DEFAULT 30
+            building_id INTEGER,
+            room_number TEXT NOT NULL,
+            room_type TEXT NOT NULL CHECK (room_type IN ('LECTURE', 'MULTI_PURPOSE', 'WORKSHOP_LAB', 'LABORATORY')),
+            capacity INTEGER DEFAULT 30,
+            FOREIGN KEY(building_id) REFERENCES buildings(id)
         )`, (err) => { if (err) console.error("Error creating rooms:", err.message); });
 
         // Create Bookings Table
@@ -65,14 +77,21 @@ function seedData() {
         stmtUser.run('Mona (Secretary)', 'EMP-004', 'SECRETARY');
         stmtUser.finalize();
 
-        // Insert Rooms
-        const stmtRoom = db.prepare('INSERT INTO rooms (name, room_type, capacity) VALUES (?, ?, ?)');
-        stmtRoom.run('Hall A', 'LECTURE', 100);
-        stmtRoom.run('Room B', 'LECTURE', 40);
-        stmtRoom.run('Conference Room 1', 'MULTI_PURPOSE', 150);
+        // Insert Buildings
+        const stmtBuilding = db.prepare('INSERT INTO buildings (name, total_rooms, creation_date) VALUES (?, ?, ?)');
+        stmtBuilding.run('Building A', 10, '2020-01-01');
+        stmtBuilding.run('Building B', 15, '2021-05-20');
+        stmtBuilding.finalize();
+
+        // Insert Rooms (linked to buildings)
+        const stmtRoom = db.prepare('INSERT INTO rooms (building_id, room_number, room_type, capacity) VALUES (?, ?, ?, ?)');
+        stmtRoom.run(1, 'A-101', 'LECTURE', 100);
+        stmtRoom.run(1, 'A-102', 'LECTURE', 40);
+        stmtRoom.run(2, 'B-201', 'MULTI_PURPOSE', 150);
+        stmtRoom.run(2, 'B-Lab-1', 'WORKSHOP_LAB', 25);
         stmtRoom.finalize();
 
-        // Insert Fixed Bookings (Approved to test conflicts later)
+        // Insert Fixed Bookings
         const stmtBooking = db.prepare('INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status) VALUES (?, ?, ?, ?, ?, ?)');
         stmtBooking.run(1, 1, '2026-04-20', '10:00-12:00', 'Fixed Database Lecture', 'APPROVED');
         stmtBooking.run(1, 2, '2026-04-20', '12:00-14:00', 'Fixed Math Lecture', 'APPROVED');

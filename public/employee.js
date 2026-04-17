@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         allRooms.forEach(r => {
             // Logic: Secretary can ONLY see MULTI_PURPOSE
             if (user.role === 'SECRETARY' && r.room_type !== 'MULTI_PURPOSE') return;
-            roomSelect.innerHTML += `<option value="${r.id}" data-type="${r.room_type}">${r.name} (${r.room_type})</option>`;
+            roomSelect.innerHTML += `<option value="${r.id}" data-type="${r.room_type}">${r.building_name} - ${r.room_number} (${r.room_type})</option>`;
         });
     } catch (e) {
         console.error(e);

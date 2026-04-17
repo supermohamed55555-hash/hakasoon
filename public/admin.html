@@ -43,13 +43,40 @@
         <h1 style="margin-bottom: 30px;">Welcome, <span id="user-name">Admin</span> (System Manager) <a href="#" id="logout-btn" class="logout">Logout</a></h1>
         
         <div class="card">
+            <h2>Building Management</h2>
+            <form id="add-building-form" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="b-name" placeholder="Building Name" required style="padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                <input type="number" id="b-rooms" placeholder="Room Count" required style="padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                <input type="date" id="b-date" required style="padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                <button type="submit" class="glow-button" style="padding: 10px 20px; font-size: 14px;">Add Building</button>
+            </form>
+            
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 20px 0;">
+            
+            <h2>Room Management</h2>
+            <form id="add-room-form" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 10px;">
+                <select id="r-building" required style="padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px;"></select>
+                <input type="text" id="r-number" placeholder="Room Number" required style="padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                <select id="r-type" required style="padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                    <option value="LECTURE">LECTURE</option>
+                    <option value="MULTI_PURPOSE">MULTI_PURPOSE</option>
+                    <option value="WORKSHOP_LAB">WORKSHOP_LAB</option>
+                    <option value="LABORATORY">LABORATORY</option>
+                </select>
+                <input type="number" id="r-capacity" placeholder="Capacity" required style="padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                <button type="submit" class="glow-button" style="padding: 10px 20px; font-size: 14px;">Add Room</button>
+            </form>
+        </div>
+
+        <div class="card">
             <h2>All Bookings & Schedule Engine</h2>
             <table>
                 <thead>
                     <tr>
+                        <th>Building</th>
+                        <th>Room</th>
                         <th>Date</th>
                         <th>Time</th>
-                        <th>Room</th>
                         <th>Employee</th>
                         <th>Purpose</th>
                         <th>Status</th>
@@ -57,7 +84,7 @@
                     </tr>
                 </thead>
                 <tbody id="bookings-list">
-                    <tr><td colspan="7">Loading...</td></tr>
+                    <tr><td colspan="8">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
