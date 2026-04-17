@@ -3,42 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AASTMT Room Booking System</title>
-    <meta name="description" content="A futuristic, premium room booking system for AASTMT.">
+    <title>AASTMT | Smart Room Booking</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="background-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </div>
+    <div class="background-blobs"></div>
     
-    <div class="login-container glass-panel">
-        <div class="logo-area">
-            <div class="hologram-ring"></div>
-            <h1>AASTMT</h1>
-            <p>Smart Room Booking</p>
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="https://www.aast.edu/en/img/aast-logo.png" alt="AAST Logo" class="logo-img">
+            <div>
+                <div style="font-weight: 700; color: #004a99; font-size: 1.1rem; letter-spacing: 1px;">AASTMT</div>
+                <div style="font-size: 0.7rem; color: #5e728d; text-transform: uppercase;">Room Management System</div>
+            </div>
         </div>
-        
-        <form id="login-form">
-            <div class="input-group">
-                <label for=" academic-email">Academic Email</label>
-                <input type="email" id="academic-email" placeholder="e.g. name@staff.aast.edu" required autocomplete="off">
+    </nav>
+
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+        <div class="login-container">
+            <div style="margin-bottom: 30px;">
+                <h1>Port Portal Login</h1>
+                <p>Please enter your academic credentials to proceed.</p>
             </div>
             
-            <div class="input-group">
-                <label for="employee-id">Academic ID (9 Digits)</label>
-                <input type="number" id="employee-id" placeholder="123456789" required oninput="if(this.value.length > 9) this.value = this.value.slice(0, 9);">
-            </div>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Academic Email</label>
+                    <input type="email" id="academic-email" placeholder="name@staff.aast.edu" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>Academic ID (9 Digits)</label>
+                    <input type="number" id="employee-id" placeholder="123456789" required oninput="if(this.value.length > 9) this.value = this.value.slice(0, 9);">
+                </div>
+                
+                <button type="submit" class="glow-button">Verify Identity</button>
+                <div id="error-message" class="error-hidden" style="margin-top: 20px; color: #c0392b; font-size: 0.9rem;"></div>
+            </form>
             
-            <button type="submit" class="glow-button">Verify Identity</button>
-            <div id="error-message" class="error-hidden">Invalid Credentials or Unauthorized Domain</div>
-        </form>
-        
-        <div class="hint-text">
-            <span>Corporate Policy:</span><br>
-            @staff, @admin, @manager, @scertary
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.75rem; color: #5e728d;">
+                <b>Authorization Domains:</b><br>
+                @admin, @manager, @staff, @scertary
+            </div>
         </div>
     </div>
 
