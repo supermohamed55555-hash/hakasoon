@@ -73,45 +73,48 @@ app.post('/api/bookings', (req, res) => {
     // In a real app we'd validate the 24h constraint here on the backend too.
     
     const stmt = db.prepare('INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status) VALUES (?, ?, ?, ?, ?, ?)');
-    stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING'], function(err) {
+    stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN'], function(err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Booking requested successfully!' });
+        res.json({ id: this.lastID, message: 'Booking requested successfully! Waiting for Admin approval.' });
     });
     stmt.finalize();
 });
 
-// 5. Update Booking Status (Admin Approve/Reject)
+// 5. Update Booking Status (Multi-Stage Approval)
 app.post('/api/bookings/:id/status', (req, res) => {
-    const { status, admin_note } = req.body;
+    const { status, admin_note, role } = req.body; // Added role to the request body
     const bookingId = req.params.id;
 
-    if (status === 'APPROVED') {
-        // DOUBLE BOOKING CONFLICT CHECK ENGINE
-        db.get(`SELECT * FROM bookings WHERE id = ?`, [bookingId], (err, currentBooking) => {
-            if (err || !currentBooking) return res.status(404).json({ error: 'Booking not found' });
-            
+    db.get(`SELECT * FROM bookings WHERE id = ?`, [bookingId], (err, currentBooking) => {
+        if (err || !currentBooking) return res.status(404).json({ error: 'Booking not found' });
+
+        if (status === 'APPROVED' || status === 'PENDING_MANAGER') {
+            // CONFLICT CHECK for both Admin and Manager approval stages
             db.get(`SELECT count(*) as count FROM bookings WHERE room_id = ? AND booking_date = ? AND time_slot = ? AND status = 'APPROVED' AND id != ?`, 
                 [currentBooking.room_id, currentBooking.booking_date, currentBooking.time_slot, bookingId], 
                 (err, row) => {
                     if (row.count > 0) {
-                        return res.status(400).json({ error: 'CONFLICT: This room is already approved for this time slot!' });
+                        return res.status(400).json({ error: 'CONFLICT: This room is already occupied!' });
                     } else {
-                        updateStatus();
+                        proceedUpdate();
                     }
             });
-        });
-    } else {
-        updateStatus(); // Proceed normally if REJECTED
-    }
+        } else {
+            proceedUpdate();
+        }
 
-    function updateStatus() {
-        const stmt = db.prepare('UPDATE bookings SET status = ?, admin_note = ? WHERE id = ?');
-        stmt.run([status, admin_note, bookingId], function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Status updated successfully' });
-        });
-        stmt.finalize();
-    }
+        function proceedUpdate() {
+            // Simplified logic: 
+            // Admin can set to PENDING_MANAGER or REJECTED
+            // Manager can set to APPROVED or REJECTED
+            const stmt = db.prepare('UPDATE bookings SET status = ?, admin_note = ? WHERE id = ?');
+            stmt.run([status, admin_note, bookingId], function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ message: `Status updated to ${status}` });
+            });
+            stmt.finalize();
+        }
+    });
 });
 
 app.listen(port, () => {

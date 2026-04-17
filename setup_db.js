@@ -23,7 +23,7 @@ function initializeDB() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             full_name TEXT NOT NULL,
             employee_id TEXT UNIQUE NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('ADMIN', 'EMPLOYEE')),
+            role TEXT NOT NULL CHECK (role IN ('ADMIN', 'EMPLOYEE', 'BRANCH_MANAGER')),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => { if (err) console.error("Error creating users:", err.message); });
 
@@ -43,7 +43,7 @@ function initializeDB() {
             booking_date DATE NOT NULL,
             time_slot TEXT NOT NULL,
             purpose TEXT,
-            status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
+            status TEXT DEFAULT 'PENDING_ADMIN' CHECK (status IN ('PENDING_ADMIN', 'PENDING_MANAGER', 'APPROVED', 'REJECTED')),
             admin_note TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id),
@@ -61,6 +61,7 @@ function seedData() {
         const stmtUser = db.prepare('INSERT INTO users (full_name, employee_id, role) VALUES (?, ?, ?)');
         stmtUser.run('Ahmed (Admin)', 'EMP-001', 'ADMIN');
         stmtUser.run('Mahmoud (Employee)', 'EMP-002', 'EMPLOYEE');
+        stmtUser.run('Samy (Branch Manager)', 'EMP-003', 'BRANCH_MANAGER');
         stmtUser.finalize();
 
         // Insert Rooms

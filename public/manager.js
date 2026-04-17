@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!userStr) { window.location.href = '/'; return; }
     
     const user = JSON.parse(userStr);
-    if (user.role !== 'ADMIN') { window.location.href = '/'; return; }
+    if (user.role !== 'BRANCH_MANAGER') { window.location.href = '/'; return; }
     
     document.getElementById('user-name').textContent = user.full_name;
 
@@ -17,18 +17,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             list.innerHTML = '';
             bookings.forEach(b => {
                 let actions = '';
-                if (b.status === 'PENDING_ADMIN') {
-                    // Admin handles requests first
+                if (b.status === 'PENDING_MANAGER') {
                     actions = `
-                        <button class="action-btn approve-btn" onclick="handleApprove(${b.id})">Forward to Manager</button>
+                        <button class="action-btn approve-btn" onclick="handleApprove(${b.id})">Final Approve</button>
                         <button class="action-btn reject-btn" onclick="openRejectModal(${b.id})">Reject</button>
                     `;
-                } else if (b.status === 'PENDING_MANAGER') {
-                    actions = `<span style="font-size: 13px; color: #f39c12;">Waiting for Branch Manager</span>`;
-                } else if (b.admin_note) {
-                    actions = `<span style="font-size: 13px; color: #8a96b3;">Note: ${b.admin_note}</span>`;
-                } else if (b.status === 'APPROVED' && b.purpose.includes('Fixed')) {
-                    actions = `<span style="font-size: 13px; color: #00e5ff;">University Fixed Schedule</span>`;
+                } else if (b.status === 'PENDING_ADMIN') {
+                     actions = `<span style="font-size: 13px; color: #f39c12;">Waiting for Admin</span>`;
                 }
 
                 list.innerHTML += `
@@ -43,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </tr>
                 `;
             });
-            if(bookings.length === 0) list.innerHTML = '<tr><td colspan="7" style="text-align:center;">No bookings found.</td></tr>';
+            if(bookings.length === 0) list.innerHTML = '<tr><td colspan="7" style="text-align:center;">No pending requests found.</td></tr>';
         } catch (e) {
             console.error(e);
         }
@@ -51,22 +46,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     loadAllBookings();
 
-    // Logic for Approve
     window.handleApprove = async (id) => {
-        if(!confirm("Are you sure you want to forward this to Branch Manager?")) return;
+        if(!confirm("Give final approval to this booking?")) return;
         
         try {
             const res = await fetch(`/api/bookings/${id}/status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'PENDING_MANAGER', admin_note: null, role: 'ADMIN' })
+                body: JSON.stringify({ status: 'APPROVED', admin_note: null, role: 'BRANCH_MANAGER' })
             });
             const data = await res.json();
             
             if (!res.ok) {
                 alert("❌ CONFLICT:\n" + data.error); 
             } else {
-                alert("✅ Booking forwarded to Branch Manager!");
+                alert("✅ Booking fully approved and finalized!");
                 loadAllBookings();
             }
         } catch(e) {
@@ -74,7 +68,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Logic for Reject Modal
     window.openRejectModal = (id) => {
         currentRejectId = id;
         document.getElementById('reject-reason').value = '';
@@ -89,12 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch(`/api/bookings/${currentRejectId}/status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'REJECTED', admin_note: note })
+                body: JSON.stringify({ status: 'REJECTED', admin_note: note, role: 'BRANCH_MANAGER' })
             });
             
             if (res.ok) {
                 document.getElementById('rejectModal').style.display = 'none';
-                alert("Booking Rejected!");
+                alert("Final Rejection Sent.");
                 loadAllBookings();
             }
         } catch(e) {
@@ -102,7 +95,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Logout
     document.getElementById('logout-btn').addEventListener('click', () => {
         localStorage.removeItem('currentUser');
         window.location.href = '/';

@@ -33,12 +33,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const list = document.getElementById('requests-list');
             list.innerHTML = '';
             bookings.forEach(b => {
+                let statusLabel = b.status.replace('_', ' ');
                 list.innerHTML += `
                     <tr>
                         <td>${b.booking_date}</td>
                         <td>${b.time_slot}</td>
                         <td>${b.room_name}</td>
-                        <td class="status-${b.status}"><b>${b.status}</b></td>
+                        <td class="status-${b.status}"><b>${statusLabel}</b></td>
                         <td>${b.admin_note || '-'}</td>
                     </tr>
                 `;
