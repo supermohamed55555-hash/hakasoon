@@ -226,7 +226,95 @@ body {
     padding-top: 20px;
 }
 
-.hint-text span {
-    color: var(--primary-glow);
-    font-weight: bold;
+/* Dashboard Layouts */
+.dashboard-container { 
+    max-width: 1200px; 
+    width: 95%;
+    margin: 40px auto; 
+    color: white; 
+    z-index: 2;
+    overflow-y: auto;
+    padding-bottom: 100px;
+}
+
+body {
+    overflow-y: auto !important;
+}
+
+.card { 
+    background: var(--glass-bg); 
+    padding: 25px; 
+    border-radius: 20px; 
+    border: 1px solid var(--glass-border); 
+    margin-bottom: 30px; 
+    backdrop-filter: blur(15px); 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+h2 { margin-bottom: 20px; color: var(--primary-glow); font-size: 1.2rem; display: flex; align-items: center; gap: 10px;}
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;}
+th { color: var(--text-muted); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; padding: 15px 10px; border-bottom: 2px solid var(--glass-border);}
+td { padding: 15px 10px; border-bottom: 1px solid var(--glass-border); }
+
+/* Floating Action Button */
+.fab { 
+    position: fixed; 
+    bottom: 30px; 
+    right: 30px; 
+    width: 65px; 
+    height: 65px; 
+    background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow)); 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 35px; 
+    color: #050510; 
+    cursor: pointer; 
+    box-shadow: 0 10px 30px rgba(0, 229, 255, 0.4); 
+    z-index: 999; 
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: none;
+}
+.fab:hover { 
+    transform: scale(1.1) rotate(90deg); 
+    box-shadow: 0 15px 40px rgba(0, 229, 255, 0.6);
+}
+
+/* Sidebar & Notifications */
+.notif-item { 
+    padding: 15px; 
+    border-radius: 12px; 
+    background: rgba(255, 255, 255, 0.03); 
+    margin-bottom: 12px; 
+    border-left: 4px solid var(--primary-glow); 
+    font-size: 0.85rem;
+    line-height: 1.4;
+    transition: 0.3s;
+}
+.notif-item:hover { background: rgba(255, 255, 255, 0.07); }
+
+.report-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 20px;
+}
+
+.status-PENDING_ADMIN { color: #f39c12; }
+.status-PENDING_MANAGER { color: #e056fd; }
+.status-APPROVED { color: #00e5ff; }
+.status-REJECTED { color: #ff3366; }
+
+form label { display: block; font-size: 11px; color: var(--text-muted); margin: 15px 0 5px 0; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;}
+form input, form select, form textarea { width: 100%; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; padding: 12px; border-radius: 10px; outline: none; transition: 0.3s;}
+form input:focus { border-color: var(--primary-glow); }
+
+@media (min-width: 900px) {
+    .dashboard-container { display: grid; grid-template-columns: 3fr 1fr; gap: 30px; }
+}
+
+@media (max-width: 899px) {
+    .dashboard-container { flex-direction: column; }
 }

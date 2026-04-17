@@ -42,23 +42,42 @@ app.get('/api/rooms', (req, res) => {
     });
 });
 
-// 3. Get All Bookings (Admin) or for specific user
+// 3. Get All Bookings (with filtering by date/userId)
 app.get('/api/bookings', (req, res) => {
-    const userId = req.query.user_id;
+    const { user_id, date } = req.query;
     let query = `
-        SELECT b.id, u.full_name as user_name, r.name as room_name, b.booking_date, b.time_slot, b.purpose, b.status, b.admin_note 
+        SELECT b.*, u.full_name as user_name, r.room_number as room_name, bl.name as building_name
         FROM bookings b
         JOIN users u ON b.user_id = u.id
         JOIN rooms r ON b.room_id = r.id
+        JOIN buildings bl ON r.building_id = bl.id
     `;
     let params = [];
-
-    if (userId) {
-        query += ' WHERE b.user_id = ?';
-        params.push(userId);
-    }
+    let clauses = [];
+    
+    if (user_id) { clauses.push('b.user_id = ?'); params.push(user_id); }
+    if (date) { clauses.push('b.booking_date = ?'); params.push(date); }
+    
+    if (clauses.length > 0) query += ' WHERE ' + clauses.join(' AND ');
+    query += ' ORDER BY b.created_at DESC';
 
     db.all(query, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// 3b. Admin Notifications (Approved by Manager)
+app.get('/api/notifications', (req, res) => {
+    const query = `
+        SELECT b.id, b.purpose, b.booking_date, b.time_slot, r.room_number, u.full_name
+        FROM bookings b
+        JOIN rooms r ON b.room_id = r.id
+        JOIN users u ON b.user_id = u.id
+        WHERE b.status = 'APPROVED'
+        ORDER BY b.created_at DESC LIMIT 5
+    `;
+    db.all(query, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -68,60 +87,43 @@ app.get('/api/bookings', (req, res) => {
 // PHASE 3 API ENDPOINTS
 // =======================
 
-// 4. Create a Booking (Employee/Secretary with restrictive logic)
+// 4. Create a Booking (Employee/Secretary with restrictive logic and E-Form)
 app.post('/api/bookings', (req, res) => {
-    const { user_id, room_id, booking_date, time_slot, purpose } = req.body;
-
-    // 1. Fetch Room and User to verify rules
+    const { user_id, room_id, booking_date, time_slot, purpose, event_manager_name, event_manager_title, tech_requirements } = req.body;
+    
     db.get('SELECT room_type FROM rooms WHERE id = ?', [room_id], (err, room) => {
         db.get('SELECT role FROM users WHERE id = ?', [user_id], (err, user) => {
-
-            // Rule: Secretary ONLY for MULTI_PURPOSE
             if (user.role === 'SECRETARY' && room.room_type !== 'MULTI_PURPOSE') {
                 return res.status(403).json({ error: 'Secretaries can only book Multi-Purpose rooms.' });
             }
 
-            // Rule: Time constraints based on calendar days
             const bookingDateObj = new Date(booking_date);
-            bookingDateObj.setHours(0, 0, 0, 0);
-
+            bookingDateObj.setHours(0,0,0,0);
             const todayDateObj = new Date();
-            todayDateObj.setHours(0, 0, 0, 0);
-
-            // Difference in days
+            todayDateObj.setHours(0,0,0,0);
             const diffDays = Math.ceil((bookingDateObj - todayDateObj) / (1000 * 60 * 60 * 24));
-            const dayLimit = room.room_type === 'MULTI_PURPOSE' ? 2 : 1; // 2 days = 48h, 1 day = 24h
-
+            const dayLimit = room.room_type === 'MULTI_PURPOSE' ? 2 : 1; 
+            
             if (diffDays < dayLimit) {
-                return res.status(400).json({
-                    error: `Constraint Violation: ${room.room_type} rooms require at least ${dayLimit} full days notice (${dayLimit * 24}h).`,
-                });
+                return res.status(400).json({ error: `${room.room_type} rooms require at least ${dayLimit} days notice.` });
             }
 
-            // 2. Check for existing APPROVED bookings (Conflict check)
-            const conflictQuery = `
-                SELECT b.*, u.full_name as owner_name 
-                FROM bookings b 
-                JOIN users u ON b.user_id = u.id 
-                WHERE b.room_id = ? AND b.booking_date = ? AND b.time_slot = ? AND b.status = 'APPROVED'
-            `;
-
+            const conflictQuery = `SELECT * FROM bookings WHERE room_id = ? AND booking_date = ? AND time_slot = ? AND status = 'APPROVED'`;
             db.get(conflictQuery, [room_id, booking_date, time_slot], (err, conflict) => {
-                if (err) return res.status(500).json({ error: err.message });
-
                 if (conflict) {
-                    return res.status(400).json({
+                    return res.status(400).json({ 
                         error: 'CONFLICT',
-                        message: `This room is already reserved for "${conflict.purpose}" during the ${conflict.time_slot} slot.`,
-                        suggestion: 'Please try selecting a different time slot or another room.'
+                        message: `Already reserved for "${conflict.purpose}"`
                     });
                 }
 
-                // 3. Insert if all checks pass
-                const stmt = db.prepare('INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status) VALUES (?, ?, ?, ?, ?, ?)');
-                stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN'], function (err) {
+                const stmt = db.prepare(`
+                    INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status, event_manager_name, event_manager_title, tech_requirements) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `);
+                stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN', event_manager_name, event_manager_title, tech_requirements], function(err) {
                     if (err) return res.status(500).json({ error: err.message });
-                    res.json({ id: this.lastID, message: 'Booking requested successfully! Waiting for Admin approval.' });
+                    res.json({ id: this.lastID, message: 'Requested successfully! Waiting Admin approval.' });
                 });
                 stmt.finalize();
             });

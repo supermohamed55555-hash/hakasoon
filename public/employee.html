@@ -6,18 +6,6 @@
     <title>Employee Dashboard - AASTMT</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        .dashboard-container { max-width: 800px; margin: 40px auto; color: white; }
-        .card { background: var(--glass-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--glass-border); margin-bottom: 30px; backdrop-filter: blur(10px); }
-        h2 { margin-bottom: 20px; color: var(--primary-glow); }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--glass-border); }
-        .status-PENDING { color: #f39c12; }
-        .status-APPROVED { color: #00e5ff; }
-        .status-REJECTED { color: #ff3366; }
-        .logout { float: right; color: #ff3366; text-decoration: none; font-size: 14px; cursor: pointer; transition: 0.3s; }
-        .logout:hover { text-shadow: 0 0 10px #ff3366; }
-    </style>
 </head>
 <body>
     <div class="background-blobs">
@@ -26,40 +14,43 @@
     </div>
     
     <div class="dashboard-container" style="position: relative; z-index: 2;">
-        <h1 style="margin-bottom: 30px;">Welcome, <span id="user-name">Employee</span> <a href="#" id="logout-btn" class="logout">Logout</a></h1>
+        <h1 style="margin-bottom: 30px;">Welcome, <span id="user-name">User</span> <a href="#" id="logout-btn" class="logout" style="float: right; color: #ff3366; text-decoration: none; font-size: 14px;">Logout</a></h1>
         
         <div class="card">
             <h2>Book a Room (Blind Request)</h2>
             <form id="booking-form">
-                <div class="input-group">
-                    <label>Select Room</label>
-                    <select id="room-select" required style="width:100%; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 12px; outline: none;">
-                        <option value="">Loading rooms...</option>
-                    </select>
+                <label>SELECT ROOM</label>
+                <select id="room-select" required></select>
+
+                <label>DATE (> 24/48 HOURS CONSTRAINT)</label>
+                <input type="date" id="booking-date" required>
+
+                <label>TIME SLOT</label>
+                <select id="time-slot" required>
+                    <option value="08:00 - 10:00">08:00 - 10:00</option>
+                    <option value="10:00 - 12:00">10:00 - 12:00</option>
+                    <option value="12:00 - 14:00">12:00 - 14:00</option>
+                    <option value="14:00 - 16:00">14:00 - 16:00</option>
+                </select>
+
+                <label>PURPOSE OF BOOKING</label>
+                <input type="text" id="purpose" placeholder="Brief Purpose (e.g. Workshop)" required>
+                
+                <!-- Extra Fields for Multi-Purpose Rooms (E-Form Requirements) -->
+                <div id="multi-purpose-fields" style="display: none; border-top: 1px solid var(--glass-border); padding-top: 15px; margin-top: 15px;">
+                    <p style="color: var(--primary-glow); font-size: 14px; margin-bottom: 10px; font-weight: bold;">🏢 Event Manager Details</p>
+                    <input type="text" id="em-name" placeholder="Full Name">
+                    <input type="text" id="em-title" placeholder="Job Title">
+                    <p style="color: var(--primary-glow); font-size: 14px; margin-bottom: 10px; margin-top:10px; font-weight: bold;">🛠️ Technical Requirements</p>
+                    <textarea id="tech-req" placeholder="Specify: Microphones count, Laptop needed, Projector, Video Conference setup, etc." style="height: 80px;"></textarea>
                 </div>
-                <div class="input-group">
-                    <label>Date (> 24 hours constraint)</label>
-                    <input type="date" id="booking-date" required>
-                </div>
-                <div class="input-group">
-                    <label>Time Slot</label>
-                    <select id="time-slot" required style="width:100%; padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 12px; outline: none;">
-                        <option value="08:00-10:00">08:00 - 10:00</option>
-                        <option value="10:00-12:00">10:00 - 12:00</option>
-                        <option value="12:00-14:00">12:00 - 14:00</option>
-                        <option value="14:00-16:00">14:00 - 16:00</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Purpose of Booking</label>
-                    <input type="text" id="purpose" required placeholder="e.g. Makeup Lecture">
-                </div>
-                <button type="submit" class="glow-button">Submit Request</button>
+
+                <button type="submit" class="glow-button" id="submit-btn" style="margin-top: 20px;">Submit Request</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>My Requests Status</h2>
+            <h2>My Booking Requests</h2>
             <table>
                 <thead>
                     <tr>
@@ -67,15 +58,16 @@
                         <th>Time</th>
                         <th>Room</th>
                         <th>Status</th>
-                        <th>Admin Note</th>
+                        <th>Admin Feedback</th>
                     </tr>
                 </thead>
                 <tbody id="requests-list">
-                    <tr><td colspan="5">Loading...</td></tr>
+                    <tr><td colspan="5">No requests found.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
+
     <script src="employee.js"></script>
 </body>
 </html>
