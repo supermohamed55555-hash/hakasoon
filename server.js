@@ -91,17 +91,44 @@ app.get('/api/bookings', (req, res) => {
 app.post('/api/bookings', (req, res) => {
     try {
         const { user_id, room_id, booking_date, time_slot, purpose, event_manager_name, event_manager_title, tech_requirements } = req.body;
-        const room = db.prepare('SELECT room_type FROM rooms WHERE id = ?').get(room_id);
+        
+        const room = db.prepare('SELECT room_type, room_number FROM rooms WHERE id = ?').get(room_id);
         const user = db.prepare('SELECT role FROM users WHERE id = ?').get(user_id);
         
-        if (user.role === 'SECRETARY' && room.room_type !== 'MULTI_PURPOSE') return res.status(403).json({ error: 'SECRETARY restriction' });
+        // 1. Authorization Rules
+        if (user.role === 'SECRETARY' && room.room_type !== 'MULTI_PURPOSE') 
+            return res.status(403).json({ error: 'SECRETARY is only authorized for Multi-Purpose facilities.' });
         
+        // 2. Advance Notice Rules
         const diffDays = Math.ceil((new Date(booking_date) - new Date().setHours(0,0,0,0)) / 86400000);
         const dayLimit = room.room_type === 'MULTI_PURPOSE' ? 2 : 1;
-        if (diffDays < dayLimit) return res.status(400).json({ error: `Notice: ${dayLimit} days` });
+        if (diffDays < dayLimit) 
+            return res.status(400).json({ error: `Notice Policy: ${dayLimit} days required for this facility type.` });
+
+        // 3. CONFLICT CHECK
+        const existing = db.prepare(`SELECT id FROM bookings WHERE room_id = ? AND booking_date = ? AND time_slot = ? AND status != 'REJECTED'`).get(room_id, booking_date, time_slot);
+        
+        if (existing) {
+            // SUGGESTION LOGIC: Find free rooms of the same type
+            const alternatives = db.prepare(`
+                SELECT r.id, r.room_number, b.name as building_name 
+                FROM rooms r
+                JOIN buildings b ON r.building_id = b.id
+                WHERE r.room_type = ? AND r.id != ?
+                AND r.id NOT IN (
+                    SELECT room_id FROM bookings WHERE booking_date = ? AND time_slot = ? AND status != 'REJECTED'
+                )
+                LIMIT 3
+            `).all(room.room_type, room_id, booking_date, time_slot);
+
+            return res.status(409).json({ 
+                error: `The room ${room.room_number} is already reserved for this slot.`,
+                suggestions: alternatives 
+            });
+        }
 
         db.prepare(`INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status, event_manager_name, event_manager_title, tech_requirements) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN', event_manager_name, event_manager_title, tech_requirements);
-        res.json({ message: 'Success' });
+        res.json({ message: 'Booking request submitted successfully.' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

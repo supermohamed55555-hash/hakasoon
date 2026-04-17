@@ -69,16 +69,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify(data)
             });
             const result = await res.json();
+            
             if (res.ok) {
-                alert('✅ Success: ' + result.message);
+                alert('✅ Official Request Submitted Successfully!');
                 loadRequests();
                 document.getElementById('booking-form').reset();
                 mpFields.style.display = 'none';
+            } else if (res.status === 409 && result.suggestions && result.suggestions.length > 0) {
+                // SUGGESTION FEATURE
+                let suggestionList = result.suggestions.map(s => `• ${s.building_name}: ${s.room_number}`).join('\n');
+                let confirmChoice = confirm(`${result.error}\n\nWe found these alternative rooms available at the same time:\n${suggestionList}\n\nWould you like us to select the first suggestion for you?`);
+                
+                if (confirmChoice) {
+                    roomSelect.value = result.suggestions[0].id;
+                    alert("Room updated to " + result.suggestions[0].room_number + ". Please click Submit again.");
+                }
             } else {
-                alert(`❌ ${result.message || result.error}`);
+                alert(`❌ Access Denied: ${result.error || 'System error'}`);
             }
-        } catch (error) { alert('Error submitting'); }
-        btn.textContent = 'Submit Request';
+        } catch (error) { alert('❌ Connection Timeout: Please check your network.'); }
+        btn.textContent = 'Submit Official Request';
         btn.disabled = false;
     });
 
