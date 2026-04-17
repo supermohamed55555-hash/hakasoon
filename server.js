@@ -34,12 +34,47 @@ app.get('/api/users', (req, res) => {
     });
 });
 
-// 2. Get All Rooms
+// 2. Get All Rooms (with Building Info)
 app.get('/api/rooms', (req, res) => {
-    db.all('SELECT * FROM rooms', [], (err, rows) => {
+    const query = `
+        SELECT r.*, b.name as building_name 
+        FROM rooms r
+        JOIN buildings b ON r.building_id = b.id
+    `;
+    db.all(query, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
+});
+
+// 2b. Get All Buildings
+app.get('/api/buildings', (req, res) => {
+    db.all('SELECT * FROM buildings', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// 2c. Add New Building (Admin Only)
+app.post('/api/buildings', (req, res) => {
+    const { name, total_rooms, creation_date } = req.body;
+    const stmt = db.prepare('INSERT INTO buildings (name, total_rooms, creation_date) VALUES (?, ?, ?)');
+    stmt.run([name, total_rooms, creation_date], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, message: 'Building added successfully!' });
+    });
+    stmt.finalize();
+});
+
+// 2d. Add New Room (Admin Only)
+app.post('/api/rooms', (req, res) => {
+    const { building_id, room_number, room_type, capacity } = req.body;
+    const stmt = db.prepare('INSERT INTO rooms (building_id, room_number, room_type, capacity) VALUES (?, ?, ?, ?)');
+    stmt.run([building_id, room_number, room_type, capacity], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, message: 'Room added successfully!' });
+    });
+    stmt.finalize();
 });
 
 // 3. Get All Bookings (with filtering by date/userId)
