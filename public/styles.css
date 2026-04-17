@@ -246,6 +246,44 @@ td:last-child { border-right: 1px solid #f0f4f8; border-radius: 0 12px 12px 0; }
     color: var(--primary-blue);
 }
 
+/* Action Buttons Styling */
+.action-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.approve-btn {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+}
+
+.approve-btn:hover {
+    background: #2e7d32;
+    color: white;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+}
+
+.reject-btn {
+    background: #ffebee;
+    color: #c62828;
+    border-color: #ffcdd2;
+    margin-left: 8px;
+}
+
+.reject-btn:hover {
+    background: #c62828;
+    color: white;
+    box-shadow: 0 4px 12px rgba(198, 40, 40, 0.2);
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }

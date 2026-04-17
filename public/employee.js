@@ -100,20 +100,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await res.json();
             
             if (res.ok) {
-                alert('✅ Request Submitted Successfully!');
+                alert('Request Submitted Successfully!');
                 loadRequests();
                 document.getElementById('booking-form').reset();
                 if(mpFields) mpFields.style.display = 'none';
             } else if (res.status === 409 && result.suggestions) {
-                let sList = result.suggestions.map(s => `• ${s.building_name}: ${s.room_number}`).join('\n');
+                let sList = result.suggestions.map(s => `- ${s.building_name}: ${s.room_number}`).join('\n');
                 if (confirm(`${result.error}\n\nSuggested Availability:\n${sList}\n\nSwitch to the first suggestion?`)) {
                     roomSelect.value = result.suggestions[0].id;
                     alert("Room switched. Click Submit again.");
                 }
             } else {
-                alert(`❌ Error: ${result.error || 'Unknown error'}`);
+                alert(`Error: ${result.error || 'Unknown error'}`);
             }
-        } catch (error) { alert('❌ Server Error'); }
+        } catch (error) { alert('Server Error'); }
         submitBtn.textContent = 'Submit Official Request';
         submitBtn.disabled = false;
     });
