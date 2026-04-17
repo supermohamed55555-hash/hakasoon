@@ -64,7 +64,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await res.json();
             
             if (!res.ok) {
-                alert("❌ CONFLICT:\n" + data.error); 
+                if (data.error === 'CONFLICT') {
+                    alert(`❌ ${data.message}\n\n💡 ${data.suggestion}`);
+                } else {
+                    alert("❌ Error:\n" + data.error);
+                }
             } else {
                 alert("✅ Booking forwarded to Branch Manager!");
                 loadAllBookings();

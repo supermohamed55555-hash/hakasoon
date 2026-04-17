@@ -66,18 +66,37 @@ app.get('/api/bookings', (req, res) => {
 // PHASE 3 API ENDPOINTS
 // =======================
 
-// 4. Create a Booking (Employee Blind Request)
+// 4. Create a Booking (Employee Blind Request with Conflict Check)
 app.post('/api/bookings', (req, res) => {
     const { user_id, room_id, booking_date, time_slot, purpose } = req.body;
     
-    // In a real app we'd validate the 24h constraint here on the backend too.
+    // Check for existing APPROVED bookings that conflict
+    const conflictQuery = `
+        SELECT b.*, u.full_name as owner_name 
+        FROM bookings b 
+        JOIN users u ON b.user_id = u.id 
+        WHERE b.room_id = ? AND b.booking_date = ? AND b.time_slot = ? AND b.status = 'APPROVED'
+    `;
     
-    const stmt = db.prepare('INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status) VALUES (?, ?, ?, ?, ?, ?)');
-    stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN'], function(err) {
+    db.get(conflictQuery, [room_id, booking_date, time_slot], (err, conflict) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Booking requested successfully! Waiting for Admin approval.' });
+        
+        if (conflict) {
+            return res.status(400).json({ 
+                error: 'CONFLICT',
+                message: `This room is already reserved for "${conflict.purpose}" during the ${conflict.time_slot} slot.`,
+                suggestion: 'Please try selecting a different time slot or another room.'
+            });
+        }
+
+        // If no conflict, proceed
+        const stmt = db.prepare('INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status) VALUES (?, ?, ?, ?, ?, ?)');
+        stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN'], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID, message: 'Booking requested successfully! Waiting for Admin approval.' });
+        });
+        stmt.finalize();
     });
-    stmt.finalize();
 });
 
 // 5. Update Booking Status (Multi-Stage Approval)
@@ -90,11 +109,15 @@ app.post('/api/bookings/:id/status', (req, res) => {
 
         if (status === 'APPROVED' || status === 'PENDING_MANAGER') {
             // CONFLICT CHECK for both Admin and Manager approval stages
-            db.get(`SELECT count(*) as count FROM bookings WHERE room_id = ? AND booking_date = ? AND time_slot = ? AND status = 'APPROVED' AND id != ?`, 
+            db.get(`SELECT b.*, u.full_name FROM bookings b JOIN users u ON b.user_id = u.id WHERE b.room_id = ? AND b.booking_date = ? AND b.time_slot = ? AND b.status = 'APPROVED' AND b.id != ?`, 
                 [currentBooking.room_id, currentBooking.booking_date, currentBooking.time_slot, bookingId], 
                 (err, row) => {
-                    if (row.count > 0) {
-                        return res.status(400).json({ error: 'CONFLICT: This room is already occupied!' });
+                    if (row) {
+                        return res.status(400).json({ 
+                            error: 'CONFLICT',
+                            message: `Cannot approve. This room is already occupied by "${row.purpose}" (${row.time_slot}).`,
+                            suggestion: 'Please reject this request and suggest an alternative room to the employee.'
+                        });
                     } else {
                         proceedUpdate();
                     }

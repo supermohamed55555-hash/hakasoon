@@ -71,10 +71,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+            const result = await res.json();
+            
             if (res.ok) {
-                alert('Request Submitted Successfully! Wait for admin approval.');
+                alert('✅ Success: ' + result.message);
                 loadRequests();
                 document.getElementById('purpose').value = '';
+            } else if (result.error === 'CONFLICT') {
+                alert(`❌ ${result.message}\n\n💡 ${result.suggestion}`);
+            } else {
+                alert('❌ Error: ' + (result.error || 'Submission failed'));
             }
         } catch (error) {
             alert('Error submitting request');
