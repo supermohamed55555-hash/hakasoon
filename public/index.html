@@ -23,23 +23,22 @@
         
         <form id="login-form">
             <div class="input-group">
-                <label for="employee-id">Employee ID</label>
-                <input type="text" id="employee-id" placeholder="e.g. EMP-001" required autocomplete="off">
+                <label for=" academic-email">Academic Email</label>
+                <input type="email" id="academic-email" placeholder="e.g. name@staff.aast.edu" required autocomplete="off">
             </div>
             
-            <!-- Bypass complex auth for MVP -->
             <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="••••••••" required>
+                <label for="employee-id">Academic ID (9 Digits)</label>
+                <input type="number" id="employee-id" placeholder="123456789" required oninput="if(this.value.length > 9) this.value = this.value.slice(0, 9);">
             </div>
             
-            <button type="submit" class="glow-button">Access System</button>
-            <div id="error-message" class="error-hidden">Invalid Credentials. Try EMP-001 or EMP-002</div>
+            <button type="submit" class="glow-button">Verify Identity</button>
+            <div id="error-message" class="error-hidden">Invalid Credentials or Unauthorized Domain</div>
         </form>
         
         <div class="hint-text">
-            <span>Hackathon Hint:</span>
-            Admin: EMP-001 | Employee: EMP-002
+            <span>Corporate Policy:</span><br>
+            @staff, @admin, @manager, @scertary
         </div>
     </div>
 

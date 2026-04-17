@@ -21,6 +21,7 @@ function initializeDB() {
         db.run(`CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             full_name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
             employee_id TEXT UNIQUE NOT NULL,
             role TEXT NOT NULL CHECK (role IN ('ADMIN', 'EMPLOYEE', 'BRANCH_MANAGER', 'SECRETARY')),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -67,11 +68,11 @@ function initializeDB() {
 
 function seedData() {
     db.serialize(() => {
-        const stmtUser = db.prepare('INSERT INTO users (full_name, employee_id, role) VALUES (?, ?, ?)');
-        stmtUser.run('Ahmed (Admin)', 'EMP-001', 'ADMIN');
-        stmtUser.run('Mahmoud (Employee)', 'EMP-002', 'EMPLOYEE');
-        stmtUser.run('Samy (Branch Manager)', 'EMP-003', 'BRANCH_MANAGER');
-        stmtUser.run('Mona (Secretary)', 'EMP-004', 'SECRETARY');
+        const stmtUser = db.prepare('INSERT INTO users (full_name, email, employee_id, role) VALUES (?, ?, ?, ?)');
+        stmtUser.run('Ahmed (Admin)', 'ahmed@admin.aast.edu', '123456789', 'ADMIN');
+        stmtUser.run('Mahmoud (Employee)', 'mahmoud@staff.aast.edu', '222222222', 'EMPLOYEE');
+        stmtUser.run('Samy (Branch Manager)', 'samy@manager.aast.edu', '333333333', 'BRANCH_MANAGER');
+        stmtUser.run('Mona (Secretary)', 'mona@scertary.aast.edu', '444444444', 'SECRETARY');
         stmtUser.finalize();
 
         const stmtBuilding = db.prepare('INSERT INTO buildings (name, total_rooms, creation_date) VALUES (?, ?, ?)');
