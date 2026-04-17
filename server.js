@@ -41,11 +41,18 @@ app.post('/api/login', (req, res) => {
     if (!role) return res.status(403).json({ error: 'Unauthorized email domain.' });
     if (!employee_id || employee_id.length !== 9) return res.status(400).json({ error: 'ID must be exactly 9 digits.' });
 
-    // 2. Look for user or create one
-    db.get('SELECT * FROM users WHERE email = ? AND employee_id = ?', [lowerEmail, employee_id], (err, user) => {
-        if (user) return res.json(user);
+    // 2. Look for user by email only first to handle 'any ID' requirement
+    db.get('SELECT * FROM users WHERE email = ?', [lowerEmail], (err, user) => {
+        if (user) {
+            // If user exists, update their ID to the one just entered (Accept any ID)
+            db.run('UPDATE users SET employee_id = ? WHERE id = ?', [employee_id, user.id], (err) => {
+                user.employee_id = employee_id;
+                res.json(user);
+            });
+            return;
+        }
         
-        // Auto-register
+        // Auto-register new email
         const name = lowerEmail.split('@')[0].toUpperCase();
         const stmt = db.prepare('INSERT INTO users (full_name, email, employee_id, role) VALUES (?, ?, ?, ?)');
         stmt.run([name, lowerEmail, employee_id, role], function(err) {
