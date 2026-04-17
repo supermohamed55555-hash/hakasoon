@@ -3,53 +3,82 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!userStr) { window.location.href = '/'; return; }
     
     const user = JSON.parse(userStr);
-    if (user.role !== 'EMPLOYEE' && user.role !== 'SECRETARY') { window.location.href = '/'; return; }
+    const validRoles = ['EMPLOYEE', 'SECRETARY'];
+    if (!validRoles.includes(user.role)) { window.location.href = '/'; return; }
     
-    document.getElementById('user-name').textContent = `${user.full_name} (${user.role})`;
+    // Update Greeting
+    const userDisplay = document.getElementById('user-name');
+    if (userDisplay) userDisplay.textContent = `${user.full_name} (${user.role})`;
     
     const dateInput = document.getElementById('booking-date');
     const roomSelect = document.getElementById('room-select');
     const mpFields = document.getElementById('multi-purpose-fields');
+    const submitBtn = document.getElementById('submit-btn');
 
-    // Helper to calculate min date
+    // Helper to calculate min date based on room type constraint
     const setMinDate = (hours) => {
         const minDate = new Date();
         minDate.setHours(minDate.getHours() + hours);
-        dateInput.min = minDate.toISOString().split('T')[0];
-        if (dateInput.value && dateInput.value < dateInput.min) dateInput.value = '';
+        if(dateInput) {
+            dateInput.min = minDate.toISOString().split('T')[0];
+            if (dateInput.value && dateInput.value < dateInput.min) dateInput.value = '';
+        }
     };
 
     setMinDate(24);
 
     // Filter/Load Rooms
-    try {
-        const roomRes = await fetch('/api/rooms');
-        const rooms = await roomRes.json();
-        roomSelect.innerHTML = '<option value="">Select Room</option>';
-        rooms.forEach(r => {
-            if (user.role === 'SECRETARY' && r.room_type !== 'MULTI_PURPOSE') return;
-            roomSelect.innerHTML += `<option value="${r.id}" data-type="${r.room_type}">${r.building_name} - ${r.room_number} (${r.room_type})</option>`;
-        });
-    } catch (e) { console.error(e); }
+    const loadRooms = async () => {
+        try {
+            console.log("Loading rooms for role:", user.role);
+            const res = await fetch('/api/rooms');
+            if (!res.ok) throw new Error("Failed to fetch rooms");
+            const rooms = await res.json();
+            
+            roomSelect.innerHTML = '<option value="">-- Choose a Facility --</option>';
+            
+            let count = 0;
+            rooms.forEach(r => {
+                // Secretary can only see Multi-Purpose
+                if (user.role === 'SECRETARY' && r.room_type !== 'MULTI_PURPOSE') return;
+                
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.dataset.type = r.room_type;
+                opt.textContent = `${r.building_name} | ${r.room_number} (${r.room_type})`;
+                roomSelect.appendChild(opt);
+                count++;
+            });
+            console.log(`Loaded ${count} rooms.`);
+        } catch (e) {
+            console.error("Room Loading Error:", e);
+            roomSelect.innerHTML = '<option value="">Error loading rooms</option>';
+        }
+    };
+
+    await loadRooms();
 
     roomSelect.addEventListener('change', () => {
         const selected = roomSelect.options[roomSelect.selectedIndex];
-        const type = selected.getAttribute('data-type');
+        if(!selected || !selected.value) {
+            mpFields.style.display = 'none';
+            return;
+        }
+        const type = selected.dataset.type;
         if (type === 'MULTI_PURPOSE') {
             setMinDate(48);
-            mpFields.style.display = 'block';
+            if(mpFields) mpFields.style.display = 'block';
         } else {
             setMinDate(24);
-            mpFields.style.display = 'none';
+            if(mpFields) mpFields.style.display = 'none';
         }
     });
 
     // Handle form submit
     document.getElementById('booking-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = document.getElementById('submit-btn');
-        btn.textContent = 'Sending...';
-        btn.disabled = true;
+        submitBtn.textContent = 'Verifying...';
+        submitBtn.disabled = true;
 
         const data = {
             user_id: user.id,
@@ -57,9 +86,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             booking_date: dateInput.value,
             time_slot: document.getElementById('time-slot').value,
             purpose: document.getElementById('purpose').value,
-            event_manager_name: document.getElementById('em-name').value,
-            event_manager_title: document.getElementById('em-title').value,
-            tech_requirements: document.getElementById('tech-req').value
+            event_manager_name: document.getElementById('em-name')?.value || '',
+            event_manager_title: document.getElementById('em-title')?.value || '',
+            tech_requirements: document.getElementById('tech-req')?.value || ''
         };
 
         try {
@@ -71,48 +100,52 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await res.json();
             
             if (res.ok) {
-                alert('✅ Official Request Submitted Successfully!');
+                alert('✅ Request Submitted Successfully!');
                 loadRequests();
                 document.getElementById('booking-form').reset();
-                mpFields.style.display = 'none';
-            } else if (res.status === 409 && result.suggestions && result.suggestions.length > 0) {
-                // SUGGESTION FEATURE
-                let suggestionList = result.suggestions.map(s => `• ${s.building_name}: ${s.room_number}`).join('\n');
-                let confirmChoice = confirm(`${result.error}\n\nWe found these alternative rooms available at the same time:\n${suggestionList}\n\nWould you like us to select the first suggestion for you?`);
-                
-                if (confirmChoice) {
+                if(mpFields) mpFields.style.display = 'none';
+            } else if (res.status === 409 && result.suggestions) {
+                let sList = result.suggestions.map(s => `• ${s.building_name}: ${s.room_number}`).join('\n');
+                if (confirm(`${result.error}\n\nSuggested Availability:\n${sList}\n\nSwitch to the first suggestion?`)) {
                     roomSelect.value = result.suggestions[0].id;
-                    alert("Room updated to " + result.suggestions[0].room_number + ". Please click Submit again.");
+                    alert("Room switched. Click Submit again.");
                 }
             } else {
-                alert(`❌ Access Denied: ${result.error || 'System error'}`);
+                alert(`❌ Error: ${result.error || 'Unknown error'}`);
             }
-        } catch (error) { alert('❌ Connection Timeout: Please check your network.'); }
-        btn.textContent = 'Submit Official Request';
-        btn.disabled = false;
+        } catch (error) { alert('❌ Server Error'); }
+        submitBtn.textContent = 'Submit Official Request';
+        submitBtn.disabled = false;
     });
 
     const loadRequests = async () => {
+        const list = document.getElementById('requests-list');
         try {
             const res = await fetch(`/api/bookings?user_id=${user.id}`);
             const bookings = await res.json();
-            const list = document.getElementById('requests-list');
             list.innerHTML = '';
-            if(bookings.length === 0) { list.innerHTML = '<tr><td colspan="5">No requests yet.</td></tr>'; return; }
+            if(!bookings || bookings.length === 0) {
+                list.innerHTML = '<tr><td colspan="5" style="text-align:center;">No history found.</td></tr>';
+                return;
+            }
             bookings.forEach(b => {
                 list.innerHTML += `
                     <tr>
                         <td>${b.booking_date}</td>
                         <td>${b.time_slot}</td>
                         <td>${b.building_name} - ${b.room_name}</td>
-                        <td class="status-${b.status}"><b>${b.status.replace('_',' ')}</b></td>
-                        <td style="font-size: 13px;">${b.admin_note || '-'}</td>
+                        <td><span class="status-${b.status}">${b.status.replace('_',' ')}</span></td>
+                        <td style="font-size: 13px; color: #5e728d;">${b.admin_note || 'Waiting for review...'}</td>
                     </tr>
                 `;
             });
-        } catch (e) {}
+        } catch (e) {
+            list.innerHTML = '<tr><td colspan="5">Failed to load history.</td></tr>';
+        }
     };
 
     loadRequests();
-    document.getElementById('logout-btn').onclick = () => { localStorage.removeItem('currentUser'); window.location.href='/'; };
+    
+    const logoutBtn = document.getElementById('logout-btn');
+    if(logoutBtn) logoutBtn.onclick = () => { localStorage.removeItem('currentUser'); window.location.href='/'; };
 });
