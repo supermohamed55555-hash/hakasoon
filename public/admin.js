@@ -6,11 +6,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     document.getElementById('user-name').textContent = JSON.parse(userStr).full_name;
 
-    // Default Date for Morning Report is TODAY
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('report-date-picker').value = today;
+    const reportPicker = document.getElementById('report-date-picker');
+    if(reportPicker) reportPicker.value = today;
 
-    // 1. Morning Report: Daily Schedule
+    const loadAllData = () => {
+        loadDailySchedule();
+        loadPendingRequests();
+        loadNotifications();
+        loadStats();
+        loadBuildingsSelect();
+    };
+
     window.loadDailySchedule = async () => {
         try {
             const date = document.getElementById('report-date-picker').value;
@@ -35,10 +42,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `;
                 });
             }
-        } catch(e) { console.error("Schedule error:", e); }
+        } catch(e) {}
     };
 
-    // 2. Pending Approvals
     window.loadPendingRequests = async () => {
         try {
             const res = await fetch('/api/bookings');
@@ -66,10 +72,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `;
                 });
             }
-        } catch(e) { console.error("Requests error:", e); }
+        } catch(e) {}
     };
 
-    // 3. VIP Notifications (Final Approvals)
     window.loadNotifications = async () => {
         try {
             const res = await fetch('/api/notifications');
@@ -77,77 +82,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             const tray = document.getElementById('notifications-list');
             tray.innerHTML = '';
             if(!data || data.length === 0) {
-                tray.innerHTML = '<p style="font-size: 12px; text-align: center;">No approvals yet.</p>';
+                tray.innerHTML = '<p style="font-size: 11px; text-align: center; color: #8a96b3;">No final approvals.</p>';
             } else {
                 data.forEach(n => {
                     tray.innerHTML += `
                         <div class="notif-item">
-                            <b>FINALIZED:</b> ${n.room_number} for "${n.purpose}" on <b>${n.booking_date}</b> (${n.time_slot}) by ${n.full_name}
+                            ${n.room_number} for "${n.purpose}" on <b>${n.booking_date}</b> (${n.time_slot}) by ${n.full_name}
                         </div>
                     `;
                 });
             }
-        } catch(e) { console.error("Notifications error:", e); }
+        } catch(e) {}
     };
 
-    // Stats
     const loadStats = async () => {
         try {
             const bRes = await fetch('/api/buildings');
             const rRes = await fetch('/api/rooms');
             const bookRes = await fetch('/api/bookings');
+            const buildings = await bRes.json();
+            const rooms = await rRes.json();
             const bookings = await bookRes.json();
             
-            document.getElementById('stat-buildings').textContent = (await bRes.json()).length || 0;
-            document.getElementById('stat-rooms').textContent = (await rRes.json()).length || 0;
+            document.getElementById('stat-buildings').textContent = buildings.length;
+            document.getElementById('stat-rooms').textContent = rooms.length;
             document.getElementById('stat-pending').textContent = (bookings || []).filter(b => b.status === 'PENDING_ADMIN').length;
-        } catch(e) { console.error("Stats error:", e); }
+        } catch(e) {}
     };
-
-    const loadAllData = () => {
-        loadDailySchedule();
-        loadPendingRequests();
-        loadNotifications();
-        loadStats();
-    };
-
-    // Date Picker event
-    document.getElementById('report-date-picker').addEventListener('change', loadDailySchedule);
-
-    // Initial Load
-    loadAllData();
-    setInterval(loadNotifications, 10000); 
-
-    // Facility Modal Logic
-    window.openFacilityModal = () => {
-        console.log("Opening Facility Modal...");
-        const modal = document.getElementById('facilityModal');
-        modal.style.display = 'flex';
-        modal.style.opacity = '1';
-        modal.style.visibility = 'visible';
-        loadBuildingsSelect();
-    };
-
-    const fab = document.getElementById('open-facility-modal');
-    if (fab) {
-        fab.addEventListener('click', window.openFacilityModal);
-    } else {
-        console.error("FAB button not found in DOM");
-    }
 
     const loadBuildingsSelect = async () => {
         try {
             const res = await fetch('/api/buildings');
             const data = await res.json();
             const select = document.getElementById('r-building');
-            if (select) {
-                select.innerHTML = '<option value="">Target Building</option>';
+            if(select) {
+                select.innerHTML = '<option value="">Select Building</option>';
                 data.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name}</option>`);
             }
-        } catch(e) { console.error("Buildings select error:", e); }
+        } catch(e) {}
     };
 
-    // Add Building
+    // Date Picker event
+    if(reportPicker) reportPicker.addEventListener('change', loadDailySchedule);
+
+    // Forms
     document.getElementById('add-building-form').onsubmit = async (e) => {
         e.preventDefault();
         const res = await fetch('/api/buildings', {
@@ -159,10 +137,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 creation_date: document.getElementById('b-date').value
             })
         });
-        if(res.ok) { alert("Building Registered!"); loadBuildingsSelect(); loadStats(); }
+        if(res.ok) { alert("Building Registered!"); loadStats(); loadBuildingsSelect(); e.target.reset(); }
     };
 
-    // Add Room
     document.getElementById('add-room-form').onsubmit = async (e) => {
         e.preventDefault();
         const res = await fetch('/api/rooms', {
@@ -175,26 +152,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 capacity: document.getElementById('r-capacity').value
             })
         });
-        if(res.ok) { alert("Room Added!"); loadStats(); }
+        if(res.ok) { alert("Room Added!"); loadStats(); e.target.reset(); }
     };
 
-    // Approve Logic
     window.handleApprove = async (id) => {
         const res = await fetch(`/api/bookings/${id}/status`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ status: 'PENDING_MANAGER', admin_note: null, role: 'ADMIN' })
+            body: JSON.stringify({ status: 'PENDING_MANAGER', role: 'ADMIN' })
         });
-        if(res.ok) { alert("Forwarded to Manager!"); loadAllData(); } else {
-            const err = await res.json(); alert("❌ " + err.message);
-        }
+        if(res.ok) { alert("Forwarded!"); loadAllData(); }
     };
 
-    // Reject Logic
     window.openRejectModal = (id) => {
         currentRejectId = id;
         document.getElementById('rejectModal').style.display = 'flex';
     };
+
     document.getElementById('confirm-reject').onclick = async () => {
         const note = document.getElementById('reject-reason').value;
         const res = await fetch(`/api/bookings/${currentRejectId}/status`, {
@@ -208,6 +182,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadAllData(); 
         }
     };
+
+    // Initial Load
+    loadAllData();
+    setInterval(loadNotifications, 10000); 
 
     document.getElementById('logout-btn').onclick = () => { localStorage.removeItem('currentUser'); window.location.href='/'; };
 });
