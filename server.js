@@ -26,7 +26,39 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
 // PHASE 1 API ENDPOINTS
 // =======================
 
-// 1. Get All Users (For testing/Login dropdown)
+// 1. Dynamic Login/Register (Any 9-digit ID + Valid Domain)
+app.post('/api/login', (req, res) => {
+    const { email, employee_id } = req.body;
+    const lowerEmail = email.toLowerCase();
+
+    // 1. Suffix Mapping
+    let role = null;
+    if (lowerEmail.endsWith('@admin.aast.edu')) role = 'ADMIN';
+    else if (lowerEmail.endsWith('@manager.aast.edu')) role = 'BRANCH_MANAGER';
+    else if (lowerEmail.endsWith('@staff.aast.edu')) role = 'EMPLOYEE';
+    else if (lowerEmail.endsWith('@scertary.aast.edu')) role = 'SECRETARY';
+
+    if (!role) return res.status(403).json({ error: 'Unauthorized email domain.' });
+    if (!employee_id || employee_id.length !== 9) return res.status(400).json({ error: 'ID must be exactly 9 digits.' });
+
+    // 2. Look for user or create one
+    db.get('SELECT * FROM users WHERE email = ? AND employee_id = ?', [lowerEmail, employee_id], (err, user) => {
+        if (user) return res.json(user);
+        
+        // Auto-register
+        const name = lowerEmail.split('@')[0].toUpperCase();
+        const stmt = db.prepare('INSERT INTO users (full_name, email, employee_id, role) VALUES (?, ?, ?, ?)');
+        stmt.run([name, lowerEmail, employee_id, role], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            db.get('SELECT * FROM users WHERE id = ?', [this.lastID], (err, newUser) => {
+                res.json(newUser);
+            });
+        });
+        stmt.finalize();
+    });
+});
+
+// 1b. Get All Users (For testing)
 app.get('/api/users', (req, res) => {
     db.all('SELECT * FROM users', [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });

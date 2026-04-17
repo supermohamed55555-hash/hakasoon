@@ -10,45 +10,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         const email = emailInput.value.toLowerCase();
         const empId = idInput.value;
 
-        // 1. Frontend Validation: Domain Check
-        const validDomains = [
-            '@scertary.aast.edu',
-            '@admin.aast.edu',
-            '@manager.aast.edu',
-            '@staff.aast.edu'
-        ];
-
-        const hasValidDomain = validDomains.some(domain => email.endsWith(domain));
-        
-        // 2. Frontend Validation: ID Length Check
+        // Front-end ID Length Check
         if (empId.length !== 9) {
             showError("❌ Error: Academic ID must be exactly 9 digits.");
             return;
         }
 
-        if (!hasValidDomain) {
-            showError("❌ Access Denied: Unauthorized email domain.");
-            return;
-        }
-
         try {
-            // 3. Backend Verification
-            const response = await fetch('/api/users');
-            const users = await response.json();
+            // Call the dynamic login/auto-register API
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, employee_id: empId })
+            });
             
-            const user = users.find(u => u.email === email && u.employee_id === empId);
+            const result = await response.json();
             
-            if (user) {
-                // Determine destination based on role
+            if (response.ok) {
+                // Success: Redirect based on role
                 let destination = '/';
-                if (user.role === 'ADMIN') destination = 'admin.html';
-                else if (user.role === 'BRANCH_MANAGER') destination = 'manager.html';
-                else if (user.role === 'EMPLOYEE' || user.role === 'SECRETARY') destination = 'employee.html';
+                if (result.role === 'ADMIN') destination = 'admin.html';
+                else if (result.role === 'BRANCH_MANAGER') destination = 'manager.html';
+                else if (result.role === 'EMPLOYEE' || result.role === 'SECRETARY') destination = 'employee.html';
 
-                localStorage.setItem('currentUser', JSON.stringify(user));
+                localStorage.setItem('currentUser', JSON.stringify(result));
                 window.location.href = destination;
             } else {
-                showError("❌ Error: Credentials not found in central database.");
+                showError(`❌ ${result.error || 'Access Denied'}`);
             }
         } catch (error) {
             showError("❌ System Offline: Connection failed.");
