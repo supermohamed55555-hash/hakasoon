@@ -66,36 +66,55 @@ app.get('/api/bookings', (req, res) => {
 // PHASE 3 API ENDPOINTS
 // =======================
 
-// 4. Create a Booking (Employee Blind Request with Conflict Check)
+// 4. Create a Booking (Employee/Secretary with restrictive logic)
 app.post('/api/bookings', (req, res) => {
     const { user_id, room_id, booking_date, time_slot, purpose } = req.body;
     
-    // Check for existing APPROVED bookings that conflict
-    const conflictQuery = `
-        SELECT b.*, u.full_name as owner_name 
-        FROM bookings b 
-        JOIN users u ON b.user_id = u.id 
-        WHERE b.room_id = ? AND b.booking_date = ? AND b.time_slot = ? AND b.status = 'APPROVED'
-    `;
-    
-    db.get(conflictQuery, [room_id, booking_date, time_slot], (err, conflict) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        if (conflict) {
-            return res.status(400).json({ 
-                error: 'CONFLICT',
-                message: `This room is already reserved for "${conflict.purpose}" during the ${conflict.time_slot} slot.`,
-                suggestion: 'Please try selecting a different time slot or another room.'
-            });
-        }
+    // 1. Fetch Room and User to verify rules
+    db.get('SELECT room_type FROM rooms WHERE id = ?', [room_id], (err, room) => {
+        db.get('SELECT role FROM users WHERE id = ?', [user_id], (err, user) => {
+            
+            // Rule: Secretary ONLY for MULTI_PURPOSE
+            if (user.role === 'SECRETARY' && room.room_type !== 'MULTI_PURPOSE') {
+                return res.status(403).json({ error: 'Secretaries can only book Multi-Purpose rooms.' });
+            }
 
-        // If no conflict, proceed
-        const stmt = db.prepare('INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status) VALUES (?, ?, ?, ?, ?, ?)');
-        stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN'], function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ id: this.lastID, message: 'Booking requested successfully! Waiting for Admin approval.' });
+            // Rule: Time constraints (24h LECTURE, 48h MULTI_PURPOSE)
+            const hoursNotice = (new Date(booking_date) - new Date()) / (1000 * 60 * 60);
+            const limit = room.room_type === 'MULTI_PURPOSE' ? 48 : 24;
+            
+            if (hoursNotice < limit - 1) { // -1 to allow slight clock drift
+                return res.status(400).json({ error: `Constraint Violation: ${room.room_type} rooms require ${limit}h notice.` });
+            }
+
+            // 2. Check for existing APPROVED bookings (Conflict check)
+            const conflictQuery = `
+                SELECT b.*, u.full_name as owner_name 
+                FROM bookings b 
+                JOIN users u ON b.user_id = u.id 
+                WHERE b.room_id = ? AND b.booking_date = ? AND b.time_slot = ? AND b.status = 'APPROVED'
+            `;
+            
+            db.get(conflictQuery, [room_id, booking_date, time_slot], (err, conflict) => {
+                if (err) return res.status(500).json({ error: err.message });
+                
+                if (conflict) {
+                    return res.status(400).json({ 
+                        error: 'CONFLICT',
+                        message: `This room is already reserved for "${conflict.purpose}" during the ${conflict.time_slot} slot.`,
+                        suggestion: 'Please try selecting a different time slot or another room.'
+                    });
+                }
+
+                // 3. Insert if all checks pass
+                const stmt = db.prepare('INSERT INTO bookings (user_id, room_id, booking_date, time_slot, purpose, status) VALUES (?, ?, ?, ?, ?, ?)');
+                stmt.run([user_id, room_id, booking_date, time_slot, purpose, 'PENDING_ADMIN'], function(err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ id: this.lastID, message: 'Booking requested successfully! Waiting for Admin approval.' });
+                });
+                stmt.finalize();
+            });
         });
-        stmt.finalize();
     });
 });
 

@@ -23,7 +23,7 @@ function initializeDB() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             full_name TEXT NOT NULL,
             employee_id TEXT UNIQUE NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('ADMIN', 'EMPLOYEE', 'BRANCH_MANAGER')),
+            role TEXT NOT NULL CHECK (role IN ('ADMIN', 'EMPLOYEE', 'BRANCH_MANAGER', 'SECRETARY')),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => { if (err) console.error("Error creating users:", err.message); });
 
@@ -62,6 +62,7 @@ function seedData() {
         stmtUser.run('Ahmed (Admin)', 'EMP-001', 'ADMIN');
         stmtUser.run('Mahmoud (Employee)', 'EMP-002', 'EMPLOYEE');
         stmtUser.run('Samy (Branch Manager)', 'EMP-003', 'BRANCH_MANAGER');
+        stmtUser.run('Mona (Secretary)', 'EMP-004', 'SECRETARY');
         stmtUser.finalize();
 
         // Insert Rooms

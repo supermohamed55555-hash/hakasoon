@@ -3,27 +3,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!userStr) { window.location.href = '/'; return; }
     
     const user = JSON.parse(userStr);
-    if (user.role !== 'EMPLOYEE') { window.location.href = '/'; return; }
+    if (user.role !== 'EMPLOYEE' && user.role !== 'SECRETARY') { window.location.href = '/'; return; }
     
-    document.getElementById('user-name').textContent = user.full_name;
+    document.getElementById('user-name').textContent = `${user.full_name} (${user.role})`;
     
-    // Setup Date constraint (Minimum tomorrow 24hr block)
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('booking-date').min = tomorrow.toISOString().split('T')[0];
+    const dateInput = document.getElementById('booking-date');
+    const roomSelect = document.getElementById('room-select');
+    let allRooms = [];
 
-    // Load Rooms
+    // Helper to calculate min date
+    const setMinDate = (hours) => {
+        const minDate = new Date();
+        minDate.setHours(minDate.getHours() + hours);
+        dateInput.min = minDate.toISOString().split('T')[0];
+        // Reset date if it's now invalid
+        if (dateInput.value && dateInput.value < dateInput.min) {
+            dateInput.value = '';
+        }
+    };
+
+    // Default min date (24h)
+    setMinDate(24);
+
+    // Filter/Load Rooms
     try {
         const roomRes = await fetch('/api/rooms');
-        const rooms = await roomRes.json();
-        const roomSelect = document.getElementById('room-select');
+        allRooms = await roomRes.json();
+        
         roomSelect.innerHTML = '';
-        rooms.forEach(r => {
-            roomSelect.innerHTML += `<option value="${r.id}">${r.name} (${r.room_type})</option>`;
+        allRooms.forEach(r => {
+            // Logic: Secretary can ONLY see MULTI_PURPOSE
+            if (user.role === 'SECRETARY' && r.room_type !== 'MULTI_PURPOSE') return;
+            roomSelect.innerHTML += `<option value="${r.id}" data-type="${r.room_type}">${r.name} (${r.room_type})</option>`;
         });
     } catch (e) {
         console.error(e);
     }
+
+    // Room choice affects date limit
+    roomSelect.addEventListener('change', () => {
+        const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+        const type = selectedOption.getAttribute('data-type');
+        
+        if (type === 'MULTI_PURPOSE') {
+            setMinDate(48); // 48h limit
+            console.log("Setting 48h limit for Multi-Purpose");
+        } else {
+            setMinDate(24); // 24h limit
+        }
+    });
 
     // Load User Requests
     const loadRequests = async () => {

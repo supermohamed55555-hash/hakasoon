@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.location.href = '/admin.html';
                     } else if (user.role === 'BRANCH_MANAGER') {
                         window.location.href = '/manager.html';
-                    } else {
+                    } else if (user.role === 'SECRETARY' || user.role === 'EMPLOYEE') {
                         window.location.href = '/employee.html';
                     }
                 }, 600);
