@@ -1,5 +1,16 @@
 let currentRejectId = null;
 
+async function apiFetch(url) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (e) {
+        console.error(`Fetch failed ${url}:`, e);
+        return null;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const userStr = localStorage.getItem('currentUser');
     if (!userStr) { window.location.href = '/'; return; }
@@ -7,47 +18,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = JSON.parse(userStr);
     if (user.role !== 'BRANCH_MANAGER') { window.location.href = '/'; return; }
     
-    document.getElementById('user-name').textContent = user.full_name;
+    const mgmtDisplay = document.getElementById('mgmt-name');
+    if (mgmtDisplay) mgmtDisplay.textContent = user.full_name;
 
     window.loadAllBookings = async () => {
         try {
-            const res = await fetch('/api/bookings');
-            const bookings = await res.json();
-            const list = document.getElementById('bookings-list');
+            const bookings = await apiFetch('/api/bookings');
+            const list = document.getElementById('manager-requests-list');
+            if (!list) return;
+            
             list.innerHTML = '';
-            bookings.forEach(b => {
-                let actions = '';
-                if (b.status === 'PENDING_MANAGER') {
-                    actions = `
-                        <button class="action-btn approve-btn" onclick="handleApprove(${b.id})">Final Approve</button>
-                        <button class="action-btn reject-btn" onclick="openRejectModal(${b.id})">Reject</button>
-                    `;
-                } else if (b.status === 'PENDING_ADMIN') {
-                     actions = `<span style="font-size: 13px; color: #f39c12;">Waiting for Admin</span>`;
-                }
+            
+            // Filter only what needs Manager attention
+            const pending = (bookings || []).filter(b => b.status === 'PENDING_MANAGER');
+            
+            if (pending.length === 0) {
+                list.innerHTML = '<tr><td colspan="6" style="text-align:center;">No pending authorizations in your queue.</td></tr>';
+                return;
+            }
 
+            pending.forEach(b => {
                 list.innerHTML += `
                     <tr>
+                        <td>${b.user_name}</td>
+                        <td>${b.building_name} | ${b.room_name}</td>
                         <td>${b.booking_date}</td>
                         <td>${b.time_slot}</td>
-                        <td>${b.room_name}</td>
-                        <td>${b.user_name}</td>
-                        <td>${b.purpose || '-'}</td>
-                        <td class="status-${b.status}">${b.status.replace('_', ' ')}</td>
-                        <td>${actions}</td>
+                        <td>${b.purpose || 'Official Use'}</td>
+                        <td>
+                            <button class="action-btn approve-btn" onclick="handleFinalApprove(${b.id})">Approve</button>
+                            <button class="action-btn reject-btn" onclick="openRejectModal(${b.id})">Reject</button>
+                        </td>
                     </tr>
                 `;
             });
-            if(bookings.length === 0) list.innerHTML = '<tr><td colspan="7" style="text-align:center;">No pending requests found.</td></tr>';
         } catch (e) {
             console.error(e);
         }
     };
 
-    loadAllBookings();
-
-    window.handleApprove = async (id) => {
-        if(!confirm("Give final approval to this booking?")) return;
+    window.handleFinalApprove = async (id) => {
+        if(!confirm("Authorize final room confirmation?")) return;
         
         try {
             const res = await fetch(`/api/bookings/${id}/status`, {
@@ -55,32 +66,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'APPROVED', admin_note: null, role: 'BRANCH_MANAGER' })
             });
-            const data = await res.json();
             
-            if (!res.ok) {
-                if (data.error === 'CONFLICT') {
-                    alert(`❌ ${data.message}\n\n💡 ${data.suggestion}`);
-                } else {
-                    alert("❌ Error:\n" + data.error);
-                }
-            } else {
-                alert("✅ Booking fully approved and finalized!");
+            if (res.ok) {
+                alert("Authorization Successful: Booking Finalized.");
                 loadAllBookings();
+            } else {
+                alert("Action failed. Please try again.");
             }
-        } catch(e) {
-            console.error(e);
-        }
+        } catch(e) { console.error(e); }
     };
 
     window.openRejectModal = (id) => {
         currentRejectId = id;
-        document.getElementById('reject-reason').value = '';
-        document.getElementById('rejectModal').style.display = 'flex';
+        const modal = document.getElementById('rejectModal');
+        if (modal) {
+            document.getElementById('reject-reason').value = '';
+            modal.style.display = 'flex';
+        }
     };
 
-    document.getElementById('confirm-reject').addEventListener('click', async () => {
+    document.getElementById('confirm-reject').onclick = async () => {
         const note = document.getElementById('reject-reason').value;
-        if(!note) { alert("Please provide a reason!"); return; }
+        if(!note) { alert("Please provide a reason for rejection."); return; }
         
         try {
             const res = await fetch(`/api/bookings/${currentRejectId}/status`, {
@@ -91,16 +98,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (res.ok) {
                 document.getElementById('rejectModal').style.display = 'none';
-                alert("Final Rejection Sent.");
+                alert("Authorization Declined.");
                 loadAllBookings();
             }
-        } catch(e) {
-            console.error(e);
-        }
-    });
+        } catch(e) { console.error(e); }
+    };
 
-    document.getElementById('logout-btn').addEventListener('click', () => {
-        localStorage.removeItem('currentUser');
-        window.location.href = '/';
-    });
+    loadAllBookings();
+    setInterval(loadAllBookings, 15000); 
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = '/';
+        });
+    }
 });
