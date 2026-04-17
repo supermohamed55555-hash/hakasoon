@@ -7,24 +7,16 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        .dashboard-container { max-width: 1300px; margin: 40px auto; color: white; display: grid; grid-template-columns: 2.5fr 1fr; gap: 20px;}
-        .card { background: var(--glass-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--glass-border); margin-bottom: 20px; backdrop-filter: blur(10px); }
-        h2 { margin-bottom: 20px; color: var(--primary-glow); font-size: 1.1rem; display: flex; align-items: center; gap: 10px;}
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem;}
-        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--glass-border); }
+        .dashboard-container { max-width: 1200px; margin: 40px auto; color: white; display: grid; grid-template-columns: 3fr 1fr; gap: 30px;}
+        .card { background: var(--glass-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--glass-border); margin-bottom: 25px; backdrop-filter: blur(10px); }
+        h2 { margin-bottom: 20px; color: var(--primary-glow); font-size: 1.2rem; display: flex; align-items: center; gap: 10px;}
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;}
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--glass-border); }
         .logout { float: right; color: #ff3366; text-decoration: none; font-size: 14px; cursor: pointer; }
-        
-        .sidebar-form input, .sidebar-form select { 
-            width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white; margin-bottom: 10px; font-size: 13px; outline: none;
-        }
-        .sidebar-form button { width: 100%; padding: 10px; font-size: 13px; margin-top: 5px; }
-
-        .notif-item { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); margin-bottom: 10px; border-left: 4px solid #00e5ff; font-size: 0.8rem;}
-        
+        .notif-item { padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); margin-bottom: 12px; border-left: 4px solid #00e5ff; font-size: 0.85rem;}
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 10000; align-items:center; justify-content:center; backdrop-filter: blur(10px);}
         .modal-content { background: #050510; padding: 30px; border-radius: 12px; border: 1px solid #ff3366; width: 450px;}
-        
-        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
     </style>
 </head>
 <body>
@@ -34,14 +26,13 @@
     </div>
     
     <div class="dashboard-container" style="position: relative; z-index: 2;">
-        <!-- Left Side: Main Tables -->
         <div class="main-content">
             <h1 style="margin-bottom: 30px;">Admin Dashboard <a href="#" id="logout-btn" class="logout">Logout</a></h1>
             
             <div class="card">
                 <div class="report-header">
-                    <h2>📅 Daily Schedule (Morning Report)</h2>
-                    <input type="date" id="report-date-picker" style="width: auto; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; border-radius: 8px;">
+                    <h2>📅 Morning Report & Daily Schedule</h2>
+                    <input type="date" id="report-date-picker" style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; color: white;">
                 </div>
                 <table>
                     <thead>
@@ -79,49 +70,20 @@
             </div>
         </div>
 
-        <!-- Right Side: Sidebar -->
         <div class="sidebar">
             <div class="card" style="margin-top: 75px;">
                 <h2>🔔 VIP Notifications</h2>
                 <div id="notifications-list">
-                    <p style="font-size: 11px; text-align: center; color: var(--text-muted);">No final approvals yet.</p>
+                    <p style="font-size: 12px; text-align: center; color: var(--text-muted);">No new notifications</p>
                 </div>
             </div>
-
-            <!-- New Management Sidebar Section -->
-            <div class="card">
-                <h2>🏢 Add Building</h2>
-                <form id="add-building-form" class="sidebar-form">
-                    <input type="text" id="b-name" placeholder="Building Name" required>
-                    <input type="number" id="b-rooms" placeholder="Room Count">
-                    <input type="date" id="b-date">
-                    <button type="submit" class="glow-button">Register Building</button>
-                </form>
-            </div>
-
-            <div class="card">
-                <h2>🔑 Add Room</h2>
-                <form id="add-room-form" class="sidebar-form">
-                    <select id="r-building" required>
-                        <option value="">Select Building</option>
-                    </select>
-                    <input type="text" id="r-number" placeholder="Room Number" required>
-                    <select id="r-type" required>
-                        <option value="LECTURE">LECTURE</option>
-                        <option value="MULTI_PURPOSE">MULTI_PURPOSE</option>
-                        <option value="WORKSHOP_LAB">WORKSHOP_LAB</option>
-                        <option value="LABORATORY">LABORATORY</option>
-                    </select>
-                    <input type="number" id="r-capacity" placeholder="Capacity">
-                    <button type="submit" class="glow-button">Save Room</button>
-                </form>
-            </div>
-
+            
             <div class="card">
                 <h2>📊 Statistics</h2>
-                <div style="font-size: 12px; line-height: 2;">
-                    Buildings: <span id="stat-buildings">-</span> | Rooms: <span id="stat-rooms">-</span><br>
-                    Pending: <span id="stat-pending">-</span>
+                <div style="font-size: 13px; line-height: 2;">
+                    Total Buildings: <span id="stat-buildings">-</span><br>
+                    Total Rooms: <span id="stat-rooms">-</span><br>
+                    Pending Requests: <span id="stat-pending">-</span>
                 </div>
             </div>
         </div>
@@ -131,9 +93,9 @@
     <div id="rejectModal" class="modal">
         <div class="modal-content">
             <span style="float: right; cursor: pointer;" onclick="document.getElementById('rejectModal').style.display='none'">&times;</span>
-            <h3 style="color: #ff3366; margin-bottom: 15px;">Reject Request</h3>
-            <textarea id="reject-reason" placeholder="Reason for rejection..."></textarea>
-            <button id="confirm-reject" class="glow-button" style="background: #ff3366; width: 100%;">Confirm Reject</button>
+            <h3 style="color: #ff3366; margin-bottom: 15px;">Reject Booking</h3>
+            <textarea id="reject-reason" style="width: 100%; height: 100px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); border-radius: 8px; padding: 10px; margin-bottom: 15px;" placeholder="Reason for rejection..."></textarea>
+            <button id="confirm-reject" class="glow-button">Confirm Rejection</button>
         </div>
     </div>
 
